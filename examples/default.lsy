@@ -1,0 +1,23 @@
+DERIVATION: 30;
+ANGLE_FACTOR: 16.0;
+SCALE_FACTOR: 100.0;
+
+# Starting point
+AXIOM: F1F1F1;
+
+# Ignore some productions while context matching
+IGNORE: +-F;
+
+# Production with a context
+PRODUCTIONS:
+    0 < 0 > 0 --> 0;
+    0 < 0 > 1 --> 1[-F1F1];
+    0 < 1 > 0 --> 1;
+    0 < 1 > 1 --> 1;
+    1 < 0 > 0 --> 0;
+    1 < 0 > 1 --> 1F1;
+    1 < 1 > 0 --> 1;
+    1 < 1 > 1 --> F0;
+    * < + > * --> -;
+    * < - > * --> +;
+END_PRODUCTIONS

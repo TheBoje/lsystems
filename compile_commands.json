@@ -1,0 +1,68 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-O3",
+      "-Wpedantic",
+      "-Wall",
+      "-Wextra",
+      "-Iincludes",
+      "-Ibuild",
+      "-Isources",
+      "-Iincludes/ast",
+      "-Iincludes/semantic_analysis",
+      "-c",
+      "-o",
+      "build/main.o",
+      "sources/main.cpp"
+    ],
+    "directory": "/home/boj/dev/perso/lsystems",
+    "file": "/home/boj/dev/perso/lsystems/sources/main.cpp",
+    "output": "/home/boj/dev/perso/lsystems/build/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-O3",
+      "-Wpedantic",
+      "-Wall",
+      "-Wextra",
+      "-Iincludes",
+      "-Ibuild",
+      "-Isources",
+      "-Iincludes/ast",
+      "-Iincludes/semantic_analysis",
+      "-c",
+      "-o",
+      "build/parser.tab.o",
+      "build/parser.tab.cpp"
+    ],
+    "directory": "/home/boj/dev/perso/lsystems",
+    "file": "/home/boj/dev/perso/lsystems/build/parser.tab.cpp",
+    "output": "/home/boj/dev/perso/lsystems/build/parser.tab.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang++",
+      "-g",
+      "-O3",
+      "-Wpedantic",
+      "-Wall",
+      "-Wextra",
+      "-Iincludes",
+      "-Ibuild",
+      "-Isources",
+      "-Iincludes/ast",
+      "-Iincludes/semantic_analysis",
+      "-c",
+      "-o",
+      "build/semantic_analysis.o",
+      "sources/semantic_analysis/semantic_analysis.cpp"
+    ],
+    "directory": "/home/boj/dev/perso/lsystems",
+    "file": "/home/boj/dev/perso/lsystems/sources/semantic_analysis/semantic_analysis.cpp",
+    "output": "/home/boj/dev/perso/lsystems/build/semantic_analysis.o"
+  }
+]
