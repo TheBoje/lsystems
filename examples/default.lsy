@@ -1,23 +1,23 @@
-DERIVATION: 30;
-ANGLE_FACTOR: 16.0;
+DERIVATION: 3;
+ANGLE_FACTOR: 126.01;
 SCALE_FACTOR: 100.0;
 
 # Starting point
-AXIOM: F1F1F1;
+AXIOM:FBFBFB;
 
 # Ignore some productions while context matching
-IGNORE: +-F;
+IGNORE:PMF;
 
 # Production with a context
 PRODUCTIONS:
-    0 < 0 > 0 --> 0;
-    0 < 0 > 1 --> 1[-F1F1];
-    0 < 1 > 0 --> 1;
-    0 < 1 > 1 --> 1;
-    1 < 0 > 0 --> 0;
-    1 < 0 > 1 --> 1F1;
-    1 < 1 > 0 --> 1;
-    1 < 1 > 1 --> F0;
-    * < + > * --> -;
-    * < - > * --> +;
+    A < B > M --> A;
+    A < A > B --> BLMFBFBR;
+    A < B > A --> B;
+    A < B > B --> B;
+    B < A > A --> A;
+    B < A > B --> BFB;
+    B < B > A --> B;
+    B < B > B --> FA;
+    * < P > * --> M;
+    * < M > * --> P;
 END_PRODUCTIONS

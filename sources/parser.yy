@@ -1,129 +1,149 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
+
+#include "ast/ast.h"
+#include "ast/configuration.h"
+
+std::vector<ast::node*> vAst;
+ast::configuration* config = new ast::configuration();
 
 #include "locations.h"
 
-#include "ast/node.h"
-#include "ast/program.h"
-#include "ast/definition.h"
-#include "ast/symbol.h"
-
-#define LSY_DEBUG
+// #define LSY_DEBUG
 #ifdef LSY_DEBUG
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #else
 #define DEBUG_PRINT(...)
 #endif
 
-// ast::Node* root;
-
 extern "C" int yylex(void);
-extern "C" void yyerror(ast::program ** res, const char* message);
-extern int yylineno;
+extern "C" void yyerror(const char* message);
 
+extern int yylineno;
 extern YYLTYPE yylloc;
+extern char* current_token;
+extern char* current_token_type;
 %}
 
+%code requires {
+    #include "ast/ast.h"
+    #include "ast/configuration.h"
+}
+
 %locations
-%start program
+%start input
 
-%token INTEGER FLOAT
-%token CHARACTER NUMBER PLUS MINUS STAR FORWARD_SLASH EQUALS SEMICOLON LPAREN RPAREN
-%token LCONTEXT RCONTEXT ARROW LBRACKET RBRACKET COLON
 %token DERIVATION ANGLE_FACTOR SCALE_FACTOR AXIOM IGNORE PRODUCTIONS END_PRODUCTIONS
+%token CONTEXT_LEFT CONTEXT_RIGHT IMPLIES SEMICOLON
+%token FLOAT INTEGER ANY_TOKEN
 
-%type<program> program
-%type<term> definition symbol
+%token <symbol_node> SYMBOL
+%type  <context_node> context
+%type  <symbol_node> symbol
+%type  <production_node> production
 
 %union {
-    int num_int;
-    float num_float;
-    char* c;
+    int ival;
+    float fval;
+    char* sval;
 
-    ast::program* program;
-    ast::definition* definition;
-    ast::symbol* symbol;
-}
-
-%code requires {
-    #include "ast/program.h"
-    #include "ast/definition.h"
-    #include "ast/symbol.h"
-}
-
-%parse-param { ast::program ** res }
-
-%code provides {
-    int yyparse(ast::program ** res);
+    ast::context_node *context_node;
+    ast::symbol_node *symbol_node;
+    ast::replacement_node *replacement_node;
+    ast::production_node *production_node;
 }
 
 %%
 
-program: sequence { DEBUG_PRINT("program -> sequence\n"); *res = new ast::sequence($1); }
+input:
+    | config axiom ignore productions {}
     ;
 
-sequence: expression sequence { DEBUG_PRINT("sequence -> expression sequence\n"); $$ = new seq_item($1, $2); }
-    | /* empty */ { DEBUG_PRINT("sequence -> nullptr\n"); $$ = nullptr; }
+config:
+    | derivation angle_factor scale_factor {}
     ;
 
-expression: DERIVATION COLON INTEGER SEMICOLON{
-        DEBUG_PRINT("definition -> DERIVATION COLON INTEGER ; (%d)\n", yylval.num_int);
-        $$ = new ast::definition(yylval.num_int, ast::definition::type::derivation);
+derivation:
+    | DERIVATION INTEGER SEMICOLON {
+        DEBUG_PRINT("Derivation set to: %d\n", yylval.ival);
+        config->derivation = yylval.ival;
     }
-    | ANGLE_FACTOR COLON FLOAT SEMICOLON {
-        DEBUG_PRINT("definition -> ANGLE_FACTOR COLON FLOAT ; (%f)\n", yylval.num_float);
-        $$ = new ast::definition(yylval.num_float, ast::definition::type::angle_factor);
-    }
-    | SCALE_FACTOR COLON FLOAT SEMICOLON {
-        DEBUG_PRINT("definition -> SCALE_FACTOR COLON FLOAT ; (%f)\n", yylval.num_float);
-        $$ = new ast::definition(yylval.num_float, ast::definition::type::scale);
-    }
-    | AXIOM COLON symbols SEMICOLON {
-        DEBUG_PRINT("definition -> AXIOM COLON symbols ;\n");
-        $$ = new ast::symbol($3, ast::symbol::type::axiom);
-    }
-    | IGNORE COLON symbols SEMICOLON {
-        DEBUG_PRINT("definition -> IGNORE COLON symbols ;\n");
-        $$ = new ast::symbol($3, ast::symbol::type::ignore);
-    }
-    | PRODUCTIONS COLON productions END_PRODUCTIONS { DEBUG_PRINT("definition -> PRODUCTIONS productions END_PRODUCTIONS\n"); }
     ;
 
-symbols: symbol symbols { DEBUG_PRINT("symbols -> symbol symbols\n"); }
-    | /* empty */ { DEBUG_PRINT("symbols -> /* empty */\n"); }
+angle_factor:
+    | ANGLE_FACTOR FLOAT SEMICOLON {
+        DEBUG_PRINT("Angle factor set to: %f\n", yylval.fval);
+        config->angle_factor = yylval.fval;
+    }
     ;
 
-symbol: CHARACTER { DEBUG_PRINT("symbol -> CHARACTER (%s)\n", yylval.c); }
-      | NUMBER { DEBUG_PRINT("symbol -> NUMBER (%d)\n", yylval.num_int); }
-      | LBRACKET { DEBUG_PRINT("symbol -> LBRACKET ([)\n"); }
-      | RBRACKET { DEBUG_PRINT("symbol -> RBRACKET (])\n"); }
-      | PLUS { DEBUG_PRINT("symbol -> PLUS (+)\n"); }
-      | MINUS { DEBUG_PRINT("symbol -> MINUS (-)\n"); }
-      | STAR { DEBUG_PRINT("symbol -> STAR (*)\n"); }
-      | FORWARD_SLASH { DEBUG_PRINT("symbol -> FORWARD_SLASH (/)\n"); }
-      ;
-
-productions: production productions { DEBUG_PRINT("productions -> production productions\n"); }
-    | production { DEBUG_PRINT("productions -> production\n"); }
+scale_factor:
+    | SCALE_FACTOR FLOAT SEMICOLON {
+        DEBUG_PRINT("Scale factor set to: %f\n", yylval.fval);
+        config->scale_factor = yylval.fval;
+    }
     ;
 
-production: symbols LCONTEXT symbols RCONTEXT symbols ARROW symbols SEMICOLON { DEBUG_PRINT("production -> symbols LCONTEXT symbols RCONTEXT symbols ARROW symbols :\n"); }
+axiom:
+    | AXIOM SYMBOL SEMICOLON {
+        DEBUG_PRINT("Axiom set to: %s\n", yylval.sval);
+        config->axiom = yylval.sval;
+    }
+    ;
+
+ignore:
+    | IGNORE SYMBOL SEMICOLON {
+        DEBUG_PRINT("Ignore set to: %s\n", yylval.sval);
+        config->ignore = yylval.sval;
+    }
+    ;
+
+productions:
+    | PRODUCTIONS production_list END_PRODUCTIONS { DEBUG_PRINT("Productions parsed.\n"); }
+    ;
+
+production_list:
+    | production production_list { DEBUG_PRINT("Production list extended.\n"); }
+    | production { DEBUG_PRINT("Single production added.\n"); }
+    ;
+
+production:
+    | context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES SYMBOL SEMICOLON {
+        auto* replacement = new ast::replacement_node(yylval.sval);
+        DEBUG_PRINT("Production created with left context: %s, symbol: %s, right context: %s, replacement: %s\n",
+            ($1 ? $1->context_symbols.c_str() : "null"),
+            $3->symbol.c_str(),
+            ($5 ? $5->context_symbols.c_str() : "null"),
+            replacement->result_symbol.c_str());
+        vAst.push_back(new ast::production_node($1, $3, $5, replacement));
+    }
+    ;
+
+context:
+    | ANY_TOKEN { DEBUG_PRINT("Context set to null.\n"); $$ = nullptr; }
+    | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context_node(yylval.sval); }
+    ;
+
+symbol:
+    | SYMBOL {
+        DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval);
+        $$ = new ast::symbol_node(yylval.sval);
+    }
     ;
 
 %%
 
-void yyerror(ast::program ** res, const char *message) {
-    (void)res;
-
-    fprintf(stderr, "Error at line %d, column %d: %s\n",
-                    yylloc.last_line,
-                    yylloc.last_column,
-                    message);
-
-    printf("Location: line %d, column %d to line %d, column %d\n",
+void yyerror(const char *message) {
+    printf("Error \"%s\": line %d, column %d to line %d, column %d\n",
+           message,
            yylloc.first_line,
            yylloc.first_column,
            yylloc.last_line,
            yylloc.last_column);
+
+    if (current_token) {
+        printf("Failed at token: %s (%s)\n", current_token, current_token_type);
+    }
 }
