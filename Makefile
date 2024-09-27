@@ -6,12 +6,13 @@ INC_DIR=includes
 # Compilation setup
 C=clang
 CXX=clang++
-CXXFLAGS=-g -O1 -Wpedantic -Wall -Wextra -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis
-CXXLINKING=-lfl -lm
+CXXFLAGS=-g -O1 -std=c++17 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
+CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread
 
 # Files
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
 SRC += $(wildcard ${SRC_DIR}/**/*.cpp)
+SRC += $(wildcard ${SRC_DIR}/**/**/*.cpp)
 
 # Object files will retain the directory structure under the OUT_DIR
 OBJ=$(patsubst ${SRC_DIR}/%.cpp,${OUT_DIR}/%.o,${SRC})
