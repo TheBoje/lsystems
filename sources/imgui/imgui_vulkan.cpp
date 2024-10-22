@@ -38,26 +38,36 @@ VkPhysicalDevice SetupVulkan_SelectPhysicalDevice() {
 	VkResult err = vkEnumeratePhysicalDevices(VkData::Get()->g_Instance, &gpu_count, nullptr);
 	check_vk_result(err);
 	IM_ASSERT(gpu_count > 0);
+    std::cout << "gpu found: " << gpu_count << std::endl;
 
 	ImVector<VkPhysicalDevice> gpus;
 	gpus.resize(gpu_count);
 	err = vkEnumeratePhysicalDevices(VkData::Get()->g_Instance, &gpu_count, gpus.Data);
 	check_vk_result(err);
 
+    int i = 0;
+    for (auto gpu : gpus) {
+        VkPhysicalDeviceProperties properties;
+        vkGetPhysicalDeviceProperties(gpu, &properties);
+        std::cout << "Device found: " << properties.deviceName << "[" << i << "]" << std::endl;
+        i++;
+    }
+    std::cout << std::flush;
+
 	// If a number >1 of GPUs got reported, find discrete GPU if present, or use
 	// first one available. This covers most common cases
 	// (multi-gpu/integrated+dedicated graphics). Handling more complicated setups
 	// (multiple dedicated GPUs) is out of scope of this sample.
-	for (VkPhysicalDevice& device : gpus) {
-		VkPhysicalDeviceProperties properties;
-		vkGetPhysicalDeviceProperties(device, &properties);
-		if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-			return device;
-	}
+	// for (VkPhysicalDevice& device : gpus) {
+	// 	VkPhysicalDeviceProperties properties;
+	// 	vkGetPhysicalDeviceProperties(device, &properties);
+	// 	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+	// 		return device;
+	// }
 
 	// Use first GPU (Integrated) is a Discrete one is not available.
 	if (gpu_count > 0)
-		return gpus[0];
+		return gpus[1];
 	return VK_NULL_HANDLE;
 }
 
