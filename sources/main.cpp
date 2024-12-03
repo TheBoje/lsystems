@@ -9,27 +9,51 @@
 #include "parser.tab.h"
 #include "renderer/vulkan_renderer.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 
 extern int yyparse();
+extern FILE* yyin;
 extern std::vector<ast::production_node*> vAst;
 extern ast::configuration* config;
 
-int main(int argc, char* argv[]) {
-	(void)argc;
-	(void)argv;
+const char* current_file_path = nullptr;
 
-	yyparse();
+// #define ENABLE_UI
+
+int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " <file_path>" << std::endl;
+		return EXIT_FAILURE;
+	}
+
+	current_file_path = argv[1];
+	FILE* file = fopen(current_file_path, "r");
+	if (!file) {
+		std::cerr << "Error: Could not open file " << current_file_path << std::endl;
+		return EXIT_FAILURE;
+	}
+	yyin = file;
+	int res = yyparse();
+	fclose(file);
+
+    if (res != EXIT_SUCCESS) {
+        return res;
+    }
 
 	if (vAst.size() <= 0) {
 		std::cout << "nodes: none" << std::endl;
 	}
+
 	for (ast::node* node : vAst) {
 		std::cout << "node: " << *node << std::endl;
 	}
+
 	std::cout << "config: " << std::endl << *config << std::endl;
 	std::cout << ast::utils::derive_lsystem(config, vAst) << std::endl;
+
+#ifdef ENABLE_UI
 
 	glfwSetErrorCallback(glfw_error_callback);
 	if (!glfwInit())
@@ -124,9 +148,16 @@ int main(int argc, char* argv[]) {
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
-
 		{
-			ImGui::Begin("Hello, world!");
+			ImGui::Begin("Main");
+			{
+				const VkPhysicalDevice& gpu = VkData::Get()->g_PhysicalDevice;
+				VkPhysicalDeviceProperties properties;
+				vkGetPhysicalDeviceProperties(gpu, &properties);
+				ImGui::Text("Selected GPU: %s", properties.deviceName);
+			}
+
+			ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
 			if (ImGui::Button("Quit")) {
 				std::cout << "bye!" << std::endl;
 				exit(0);
@@ -162,6 +193,8 @@ int main(int argc, char* argv[]) {
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
+
+#endif
 
 	return 0;
 }

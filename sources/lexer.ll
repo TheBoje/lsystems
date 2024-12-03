@@ -29,7 +29,7 @@ offset_t offset = 0;
 %option yylineno
 %option noinput nounput
 
-SYMBOL  [A-Za-z]*
+SYMBOL  [A-Za-z0-9]*
 
 %%
 
@@ -41,11 +41,11 @@ SYMBOL  [A-Za-z]*
 "PRODUCTIONS:"          { SET_CURRENT_TOKEN(PRODUCTIONS);     return PRODUCTIONS; }
 "END_PRODUCTIONS"       { SET_CURRENT_TOKEN(END_PRODUCTIONS); return END_PRODUCTIONS; }
 
-"-->"                   { SET_CURRENT_TOKEN(IMPLIES); return IMPLIES; }
-"<"                     { SET_CURRENT_TOKEN(CONTEXT_LEFT); return CONTEXT_LEFT; }
-">"                     { SET_CURRENT_TOKEN(CONTEXT_RIGHT); return CONTEXT_RIGHT; }
-";"                     { SET_CURRENT_TOKEN(SEMICOLON); return SEMICOLON; }
-"*"                     { SET_CURRENT_TOKEN(ANY_TOKEN); return ANY_TOKEN; }
+"-->"                   { SET_CURRENT_TOKEN(IMPLIES);         return IMPLIES; }
+"<"                     { SET_CURRENT_TOKEN(CONTEXT_LEFT);    return CONTEXT_LEFT; }
+">"                     { SET_CURRENT_TOKEN(CONTEXT_RIGHT);   return CONTEXT_RIGHT; }
+";"                     { SET_CURRENT_TOKEN(SEMICOLON);       return SEMICOLON; }
+"*"                     { SET_CURRENT_TOKEN(ANY_TOKEN);       return ANY_TOKEN; }
 
 [0-9]+                  { SET_CURRENT_TOKEN(INTEGER); yylval.ival = atoi(yytext); return INTEGER; }
 [0-9]+[.][0-9]+         { SET_CURRENT_TOKEN(FLOAT); yylval.fval = atof(yytext); return FLOAT; }

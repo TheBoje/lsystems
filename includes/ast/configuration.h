@@ -14,14 +14,14 @@ public:
 		   << "\tangle factor: " << conf.angle_factor << std::endl
 		   << "\tscale factor: " << conf.scale_factor << std::endl
 		   << "\taxiom: " << conf.axiom << std::endl
-		   << "\tignore: " << conf.ignore << std::endl;
+		   << "\tignore: " << (!conf.ignore.empty() ? conf.ignore : "none") << std::endl;
 		return os;
 	}
 
 public:
-	int derivation;
-	float angle_factor;
-	float scale_factor;
+	int derivation = 1;
+	float angle_factor = 1.;
+	float scale_factor = 1.;
 	std::string axiom;
 	std::string ignore;
 };

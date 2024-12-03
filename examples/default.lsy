@@ -20,4 +20,4 @@ PRODUCTIONS:
     B < B > B --> FA;
     * < P > * --> M;
     * < M > * --> P;
-END_PRODUCTIONS
+END_PRODUCTIONS;

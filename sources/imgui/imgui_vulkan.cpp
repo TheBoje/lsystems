@@ -49,8 +49,7 @@ VkPhysicalDevice SetupVulkan_SelectPhysicalDevice() {
     for (auto gpu : gpus) {
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(gpu, &properties);
-        std::cout << "Device found: " << properties.deviceName << "[" << i << "]" << std::endl;
-        i++;
+        std::cout << "Device found: " << properties.deviceName << "[" << i++ << "]" << std::endl;
     }
     std::cout << std::flush;
 
@@ -67,7 +66,7 @@ VkPhysicalDevice SetupVulkan_SelectPhysicalDevice() {
 
 	// Use first GPU (Integrated) is a Discrete one is not available.
 	if (gpu_count > 0)
-		return gpus[1];
+		return gpus[0];
 	return VK_NULL_HANDLE;
 }
 

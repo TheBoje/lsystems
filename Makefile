@@ -6,7 +6,7 @@ INC_DIR=includes
 # Compilation setup
 C=clang
 CXX=clang++
-CXXFLAGS=-g -O1 -std=c++17 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
+CXXFLAGS=-g -O0 -std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread
 
 # Files
@@ -32,7 +32,7 @@ default: lsystems
 lsystems: ${OUT_DIR}/lsystems
 
 run: lsystems examples/default.lsy
-	${OUT_DIR}/lsystems < examples/default.lsy
+	${OUT_DIR}/lsystems examples/default.lsy
 
 ${OUT_DIR}/lsystems: ${OBJ} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o
 	@echo -e "${COLOR_LINK}[CLANG]${COLOR_RESET} Linking executable ${COLOR_LINK}${COLOR_BOLD}$@${COLOR_RESET}"

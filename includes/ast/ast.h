@@ -45,15 +45,15 @@ public:
 
 class replacement_node : public node {
 public:
-	replacement_node(const std::string& symbols)
+	replacement_node(symbol_node* symbols)
 		: result_symbol(symbols) { }
 
 	void print(std::ostream& stream) const override {
-		stream << result_symbol;
+		stream << *result_symbol;
 	}
 
 public:
-	std::string result_symbol;
+	symbol_node* result_symbol;
 };
 
 class production_node : public node {

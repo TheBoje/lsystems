@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <sstream>
+#include <string.h>
 
 #include "ast/ast.h"
 #include "ast/configuration.h"
@@ -23,6 +25,7 @@ extern "C" void yyerror(const char* message);
 
 extern int yylineno;
 extern YYLTYPE yylloc;
+extern char* current_file_path;
 extern char* current_token;
 extern char* current_token_type;
 %}
@@ -101,7 +104,7 @@ ignore:
     ;
 
 productions:
-    | PRODUCTIONS production_list END_PRODUCTIONS { DEBUG_PRINT("Productions parsed.\n"); }
+    | PRODUCTIONS production_list END_PRODUCTIONS SEMICOLON { DEBUG_PRINT("Productions parsed.\n"); }
     ;
 
 production_list:
@@ -110,8 +113,8 @@ production_list:
     ;
 
 production:
-    | context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES SYMBOL SEMICOLON {
-        auto* replacement = new ast::replacement_node(yylval.sval);
+    | context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol SEMICOLON {
+        auto* replacement = new ast::replacement_node($7);
         DEBUG_PRINT("Production created with left context: %s, symbol: %s, right context: %s, replacement: %s\n",
             ($1 ? $1->context_symbols.c_str() : "null"),
             $3->symbol.c_str(),
@@ -124,6 +127,7 @@ production:
 context:
     | ANY_TOKEN { DEBUG_PRINT("Context set to null.\n"); $$ = nullptr; }
     | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context_node(yylval.sval); }
+    | INTEGER { DEBUG_PRINT("Context set to: %d\n", yylval.ival); $$ = new ast::context_node(std::to_string(yylval.ival)); }
     ;
 
 symbol:
@@ -131,17 +135,54 @@ symbol:
         DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval);
         $$ = new ast::symbol_node(yylval.sval);
     }
+    | INTEGER {
+        DEBUG_PRINT("Symbol recognized: %d\n", yylval.ival);
+        $$ = new ast::symbol_node(std::to_string(yylval.ival));
+    }
     ;
 
 %%
 
 void yyerror(const char *message) {
-    printf("Error \"%s\": line %d, column %d to line %d, column %d\n",
+    // FIXME(Louis): There is both C and C++ code here, might be easier to use only C++?
+
+    std::ostringstream error_message;
+    if (current_file_path) {
+        FILE* file = fopen(current_file_path, "r");
+        if (file) {
+            char line[1024]; // FIXME(Louis): This could be better.
+            int current_line = 1;
+
+            while (fgets(line, sizeof(line), file)) {
+                if (current_line == yylloc.first_line) {
+                    error_message << line;
+
+                    // Underline error
+                    for (int i = 0; i < yylloc.first_column - 1; i++) {
+                        error_message << " ";
+                    }
+                    for (int i = yylloc.first_column; i <= yylloc.last_column; i++) {
+                        error_message << "^";
+                    }
+                    error_message << "\n";
+                    break;
+                }
+                yylloc.first_column -= strlen(line);
+                yylloc.last_column -= strlen(line);
+                current_line++;
+            }
+            fclose(file);
+        }
+    }
+
+    printf("Error \"%s\": line %d, column %d to line %d, column %d:\n",
            message,
            yylloc.first_line,
            yylloc.first_column,
            yylloc.last_line,
            yylloc.last_column);
+
+    printf("%s\n", error_message.str().c_str());
 
     if (current_token) {
         printf("Failed at token: %s (%s)\n", current_token, current_token_type);

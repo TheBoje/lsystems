@@ -1,4 +1,6 @@
-DERIVATION: 3;
+# Koch snowflake
+
+DERIVATION: 1;
 ANGLE_FACTOR: 60.0;
 SCALE_FACTOR: 1.0;
 
@@ -11,4 +13,4 @@ IGNORE:B;
 # Production with a context
 PRODUCTIONS:
     * < F > * --> FPFMMFPF;
-END_PRODUCTIONS
+END_PRODUCTIONS;
