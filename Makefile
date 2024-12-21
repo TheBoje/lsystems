@@ -8,6 +8,7 @@ C=clang
 CXX=clang++
 CXXFLAGS=-g -O0 -std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread
+BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
 
 # Files
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
@@ -52,7 +53,7 @@ ${OUT_DIR}/parser.tab.cpp ${OUT_DIR}/parser.tab.h: ${SRC_DIR}/parser.yy
 	@echo -e "${COLOR_MKDIR}[OTHER]${COLOR_RESET} Creating directory ${COLOR_MKDIR}${OUT_DIR}${COLOR_RESET}"
 	@mkdir -p ${OUT_DIR}
 	@echo -e "${COLOR_BISON}[BISON]${COLOR_RESET} Generating ${COLOR_BISON}${COLOR_BOLD}$@${COLOR_RESET} from ${COLOR_BOLD}$<${COLOR_RESET}"
-	@bison -t -d --defines=${OUT_DIR}/parser.tab.h $< -o ${OUT_DIR}/parser.tab.cpp
+	@bison ${BISONFLAGS} $< -o ${OUT_DIR}/parser.tab.cpp
 
 ${OUT_DIR}/parser.tab.o: ${OUT_DIR}/parser.tab.cpp
 	@echo -e "${COLOR_CXX}[CLANG]${COLOR_RESET} Compiling ${COLOR_CXX}${COLOR_BOLD}$<${COLOR_RESET} (${COLOR_BOLD}${OUT_DIR}/parser.tab.o${COLOR_RESET})"
