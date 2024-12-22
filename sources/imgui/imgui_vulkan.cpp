@@ -1,6 +1,7 @@
 #include "imgui_vulkan.h"
 
 #include <iostream>
+#include <stdexcept>
 
 void glfw_error_callback(int error, const char* description) {
 	fprintf(stderr, "GLFW Error %d: %s\n", error, description);
@@ -197,8 +198,7 @@ void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int w
 	VkBool32 res;
 	vkGetPhysicalDeviceSurfaceSupportKHR(VkData::Get()->g_PhysicalDevice, VkData::Get()->g_QueueFamily, wd->Surface, &res);
 	if (res != VK_TRUE) {
-		fprintf(stderr, "Error no WSI support on physical device 0\n");
-		exit(-1);
+		throw std::runtime_error("Error no WSI support on physical device");
 	}
 
 	// Select Surface Format

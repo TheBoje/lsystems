@@ -6,9 +6,12 @@ INC_DIR=includes
 # Compilation setup
 C=clang
 CXX=clang++
-CXXFLAGS=-g -O0 -std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -I${INC_DIR}/utils -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
+CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -I${INC_DIR}/utils -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread
 BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
+
+CXXFLAGS +=-DDEBUG -g -O0 # debug
+# CXXFLAGS +=-O3 # release
 
 # Files
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
