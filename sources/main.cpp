@@ -54,14 +54,8 @@ int main(int argc, char* argv[]) {
 
 #ifdef ENABLE_UI
 
-	glm::mat4 mat;
-	glm::vec4 vec;
-	glm::vec4 res_mat = mat * vec;
-	UNUSED(res_mat);
-
-	auto* renderer = renderer::renderer::get();
-
 	try {
+		auto* renderer = renderer::renderer::get();
 		renderer->run();
 	} catch (const std::exception& e) {
 		std::cerr << "Exception while running: " << e.what() << std::endl;
@@ -71,5 +65,5 @@ int main(int argc, char* argv[]) {
 
 #endif
 
-	return 0;
+	return EXIT_SUCCESS;
 }

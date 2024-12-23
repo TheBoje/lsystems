@@ -10,8 +10,10 @@ CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread
 BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
 
-CXXFLAGS +=-DDEBUG -g -O0 # debug
-# CXXFLAGS +=-O3 # release
+# TODO: Compile to build/<release or debug>/...
+# TODO: Compile as `make debug` or maybe `make lsystems_debug` ?
+# CXXFLAGS +=-DDEBUG -g -O0 # debug
+CXXFLAGS +=-O3 # release
 
 # Files
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
@@ -38,7 +40,7 @@ lsystems: ${OUT_DIR}/lsystems
 run: lsystems examples/default.lsy
 	${OUT_DIR}/lsystems examples/default.lsy
 
-${OUT_DIR}/lsystems: ${OBJ} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o
+${OUT_DIR}/lsystems: ${OBJ} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o shaders
 	@echo -e "${COLOR_LINK}[CLANG]${COLOR_RESET} Linking executable ${COLOR_LINK}${COLOR_BOLD}$@${COLOR_RESET}"
 	@${CXX} ${CXXFLAGS} ${CXXLINKING} -o $@ ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o ${OBJ}
 	@echo -e "${COLOR_LINK}[OTHER]${COLOR_RESET} Building ${COLOR_LINK}${COLOR_BOLD}$@${COLOR_RESET} success!"
@@ -62,8 +64,15 @@ ${OUT_DIR}/parser.tab.o: ${OUT_DIR}/parser.tab.cpp
 	@echo -e "${COLOR_CXX}[CLANG]${COLOR_RESET} Compiling ${COLOR_CXX}${COLOR_BOLD}$<${COLOR_RESET} (${COLOR_BOLD}${OUT_DIR}/parser.tab.o${COLOR_RESET})"
 	@${CXX} ${CXXFLAGS} -o $@ $< -c
 
+# TODO: Clean me up please -> dynamic shader compilation?
+shaders:
+	@echo -e "${COLOR_CXX}[GLSLC]${COLOR_RESET} Compiling shaders"
+	mkdir -p ${OUT_DIR}/shaders
+	glslc renderer/shaders/shader.vert -o ${OUT_DIR}/shaders/vert.spv
+	glslc renderer/shaders/shader.frag -o ${OUT_DIR}/shaders/frag.spv
+
 clean:
 	@echo -e "${COLOR_CLEAN}[OTHER]${COLOR_RESET} Cleaning up ${COLOR_CLEAN}${COLOR_BOLD}${OUT_DIR}${COLOR_RESET}"
-	@rm -fr ${OUT_DIR}
+	@rm -fr ${OUT_DIR}/*
 
 .PHONY: clean

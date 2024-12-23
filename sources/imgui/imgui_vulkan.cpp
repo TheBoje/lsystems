@@ -72,6 +72,7 @@ VkPhysicalDevice SetupVulkan_SelectPhysicalDevice() {
 }
 
 void SetupVulkan(ImVector<const char*> instance_extensions) {
+	printf("[vulkan] setting up\n");
 	VkResult err;
 
 	// Create Vulkan Instance
@@ -192,6 +193,7 @@ void SetupVulkan(ImVector<const char*> instance_extensions) {
 }
 
 void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int width, int height) {
+	printf("[vulkan] setting up window\n");
 	wd->Surface = surface;
 
 	// Check for WSI support
@@ -208,13 +210,14 @@ void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int w
 		ImGui_ImplVulkanH_SelectSurfaceFormat(VkData::Get()->g_PhysicalDevice, wd->Surface, requestSurfaceImageFormat, (size_t)IM_ARRAYSIZE(requestSurfaceImageFormat), requestSurfaceColorSpace);
 
 	// Select Present Mode
+// #define APP_USE_UNLIMITED_FRAME_RATE
 #ifdef APP_USE_UNLIMITED_FRAME_RATE
 	VkPresentModeKHR present_modes[] = {VK_PRESENT_MODE_MAILBOX_KHR, VK_PRESENT_MODE_IMMEDIATE_KHR, VK_PRESENT_MODE_FIFO_KHR};
 #else
 	VkPresentModeKHR present_modes[] = {VK_PRESENT_MODE_FIFO_KHR};
 #endif
 	wd->PresentMode = ImGui_ImplVulkanH_SelectPresentMode(VkData::Get()->g_PhysicalDevice, wd->Surface, &present_modes[0], IM_ARRAYSIZE(present_modes));
-	// printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
+	printf("[vulkan] Selected PresentMode = %d\n", wd->PresentMode);
 
 	// Create SwapChain, RenderPass, Framebuffer, etc.
 	IM_ASSERT(VkData::Get()->g_MinImageCount >= 2);
@@ -230,6 +233,7 @@ void SetupVulkanWindow(ImGui_ImplVulkanH_Window* wd, VkSurfaceKHR surface, int w
 }
 
 void CleanupVulkan() {
+	printf("[vulkan] cleaning up\n");
 	vkDestroyDescriptorPool(VkData::Get()->g_Device, VkData::Get()->g_DescriptorPool, VkData::Get()->g_Allocator);
 
 	// Remove the debug report callback
@@ -241,6 +245,7 @@ void CleanupVulkan() {
 }
 
 void CleanupVulkanWindow() {
+	printf("[vulkan] cleaning up window\n");
 	ImGui_ImplVulkanH_DestroyWindow(VkData::Get()->g_Instance, VkData::Get()->g_Device, &VkData::Get()->g_MainWindowData, VkData::Get()->g_Allocator);
 }
 
