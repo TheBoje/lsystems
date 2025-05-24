@@ -73,7 +73,6 @@ ${OUT_DIR}/parser.tab.o: ${OUT_DIR}/parser.tab.cpp
 	@echo -e "${COLOR_CXX}[CLANG]${COLOR_RESET} Compiling ${COLOR_CXX}${COLOR_BOLD}$<${COLOR_RESET} (${COLOR_BOLD}${OUT_DIR}/parser.tab.o${COLOR_RESET})"
 	@${CXX} ${CXXFLAGS} -o $@ $< -c
 
-# TODO: Clean me up please -> dynamic shader compilation?
 ${OUT_SHADERS}:  ${SRC_SHADERS}
 	@echo -e "${COLOR_CXX}[GLSLC]${COLOR_RESET} Compiling shaders [0/2]"
 	@mkdir -p ${OUT_DIR}/shaders
