@@ -1,21 +1,18 @@
 #include "renderer/vulkan_renderer.h"
 
 #include "glfw3.h"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_vulkan.h"
 #include "macros.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <vulkan/vulkan.h>
-
 #include <stdexcept>
 #include <iostream>
 #include <set>
 #include <limits>
 #include <fstream>
+
+#include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
 static void framebufferResizeCallback(GLFWwindow* window, int, int) {
@@ -72,6 +69,9 @@ renderer::~renderer() {
 	assert(res == VkResult::VK_SUCCESS);
 
 	assert(cleanupSwapChain());
+
+	vkDestroyBuffer(_device, _vertexBuffer, nullptr);
+	vkFreeMemory(_device, _vertexBufferMemory, nullptr);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore(_device, _imageAvailableSemaphore[i], nullptr);
@@ -205,6 +205,7 @@ bool renderer::initVulkan() {
 	createGraphicsPipeline();
 	createFramebuffers();
 	createCommandPool();
+	createVertexBuffer();
 	createCommandBuffers();
 	createSyncObjects();
 
@@ -276,6 +277,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL renderer::debugCallback(
 	std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
 	return VK_FALSE;
+}
+
+uint32_t renderer::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &memoryProperties);
+
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+		if (typeFilter & (1 << i) && (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("failed to find suitable memory type");
 }
 
 bool renderer::setupDebugMessenger() {
@@ -636,12 +650,15 @@ bool renderer::createGraphicsPipeline() {
 	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
 	dynamicState.pDynamicStates = dynamicStates.data();
 
+	VkVertexInputBindingDescription bindingDescription = vertex::getBindingDescription();
+	std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = vertex::getAttributeDescriptions();
+
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly {};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -801,6 +818,44 @@ bool renderer::createCommandPool() {
 	return true;
 }
 
+bool renderer::createVertexBuffer() {
+	VkBufferCreateInfo bufferInfo {.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+		.pNext = nullptr,
+		.flags = 0,
+		.size = sizeof(vertices[0]) * vertices.size(),
+		.usage = VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT,
+		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = nullptr};
+
+	if (vkCreateBuffer(_device, &bufferInfo, nullptr, &_vertexBuffer) != VK_SUCCESS) {
+		std::runtime_error("failed to create vertex buffer");
+	}
+
+	VkMemoryRequirements memoryRequirements;
+	vkGetBufferMemoryRequirements(_device, _vertexBuffer, &memoryRequirements);
+
+	VkMemoryAllocateInfo allocInfo {.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+		.pNext = nullptr,
+		.allocationSize = memoryRequirements.size,
+		.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)};
+
+	if (vkAllocateMemory(_device, &allocInfo, nullptr, &_vertexBufferMemory) != VK_SUCCESS) {
+		throw std::runtime_error("failed to allocate vertex buffer memory");
+	}
+
+	if (vkBindBufferMemory(_device, _vertexBuffer, _vertexBufferMemory, 0) != VK_SUCCESS) {
+		throw std::runtime_error("failed to bind memory buffer");
+	}
+
+	void* data;
+	vkMapMemory(_device, _vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, vertices.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(_device, _vertexBufferMemory);
+
+	return true;
+}
+
 bool renderer::createCommandBuffers() {
 	_commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -841,6 +896,10 @@ void renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 
+	VkBuffer vertexBuffers[] = {_vertexBuffer};
+	VkDeviceSize offsets[] = {0};
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
 	VkViewport viewport {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
@@ -855,7 +914,7 @@ void renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	scissor.extent = _swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
 	vkCmdEndRenderPass(commandBuffer);
 

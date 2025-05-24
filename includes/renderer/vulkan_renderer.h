@@ -1,12 +1,15 @@
 #pragma once
 
 #include "imgui_impl_glfw.h"
-#include "imgui_impl_vulkan.h"
 
 #include <cstdint>
 #include <optional>
+#include <array>
 #include <vector>
 #include <string>
+
+#include <glm/glm.hpp>
+#include <vulkan/vulkan_core.h>
 
 namespace renderer {
 
@@ -31,6 +34,25 @@ struct SwapChainSupportDetails {
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };
+
+struct vertex {
+	glm::vec2 pos;
+	glm::vec3 color;
+	static VkVertexInputBindingDescription getBindingDescription() {
+		VkVertexInputBindingDescription bindingDescription {.binding = 0, .stride = sizeof(vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+
+		return bindingDescription;
+	}
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
+
+		attributeDescriptions[0] = {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(vertex, pos)};
+		attributeDescriptions[1] = {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(vertex, pos)};
+
+		return attributeDescriptions;
+	}
+};
+const std::vector<vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
 
 class renderer {
 public:
@@ -62,6 +84,7 @@ private:
 	bool createGraphicsPipeline();
 	bool createFramebuffers();
 	bool createCommandPool();
+	bool createVertexBuffer();
 	bool createCommandBuffers();
 	bool createSyncObjects();
 
@@ -78,6 +101,7 @@ private:
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	// helpers swap chain
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -124,6 +148,10 @@ private:
 	std::vector<VkSemaphore> _imageAvailableSemaphore;
 	std::vector<VkSemaphore> _renderFinishedSemaphore;
 	std::vector<VkFence> _inFlightFence;
+
+	// TEMP
+	VkBuffer _vertexBuffer;
+	VkDeviceMemory _vertexBufferMemory;
 };
 
 } // namespace renderer
