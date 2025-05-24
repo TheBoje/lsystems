@@ -3,14 +3,15 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
+#include <cstdint>
 #include <optional>
 #include <vector>
 #include <string>
 
 namespace renderer {
 
-const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
 const std::vector<const char*> deviceExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+const inline int MAX_FRAMES_IN_FLIGHT = 2;
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
@@ -37,6 +38,7 @@ public:
 		static renderer* _i = new renderer();
 		return _i;
 	}
+	bool _bFrameBufferResized = false;
 
 	void run();
 	~renderer();
@@ -60,8 +62,12 @@ private:
 	bool createGraphicsPipeline();
 	bool createFramebuffers();
 	bool createCommandPool();
-	bool createCommandBuffer();
-    bool createSyncObjects();
+	bool createCommandBuffers();
+	bool createSyncObjects();
+
+	// runtime updates
+	bool cleanupSwapChain();
+	bool recreateSwapChain();
 
 	// helpers
 	bool checkValidationLayerSupport();
@@ -88,35 +94,36 @@ private:
 
 private:
 	GLFWwindow* _window = nullptr;
-	bool _b_keep_alive = true;
+	bool _bKeepAlive = true;
+	uint32_t _currentFrame = 0;
 
-	VkInstance instance;
-	VkDebugUtilsMessengerEXT debugMessenger;
-	VkSurfaceKHR surface;
+	VkInstance _instance;
+	VkDebugUtilsMessengerEXT _debugMessenger;
+	VkSurfaceKHR _surface;
 
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice device;
+	VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
+	VkDevice _device;
 
-	VkQueue graphicsQueue;
-	VkQueue presentQueue;
+	VkQueue _graphicsQueue;
+	VkQueue _presentQueue;
 
-	VkSwapchainKHR swapChain;
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
-	std::vector<VkImage> swapChainImages;
-	std::vector<VkImageView> swapChainImageViews;
+	VkSwapchainKHR _swapChain;
+	VkFormat _swapChainImageFormat;
+	VkExtent2D _swapChainExtent;
+	std::vector<VkImage> _swapChainImages;
+	std::vector<VkImageView> _swapChainImageViews;
 
-	VkRenderPass renderPass;
-	VkPipelineLayout pipelineLayout;
-	VkPipeline graphicsPipeline;
+	VkRenderPass _renderPass;
+	VkPipelineLayout _pipelineLayout;
+	VkPipeline _graphicsPipeline;
 
-	std::vector<VkFramebuffer> swapChainFrameBuffers;
-	VkCommandPool commandPool;
-	VkCommandBuffer commandBuffer;
+	std::vector<VkFramebuffer> _swapChainFrameBuffers;
+	VkCommandPool _commandPool;
+	std::vector<VkCommandBuffer> _commandBuffers;
 
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderFinishedSemaphore;
-	VkFence inFlightFence;
+	std::vector<VkSemaphore> _imageAvailableSemaphore;
+	std::vector<VkSemaphore> _renderFinishedSemaphore;
+	std::vector<VkFence> _inFlightFence;
 };
 
 } // namespace renderer

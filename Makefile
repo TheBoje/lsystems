@@ -12,8 +12,13 @@ BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamp
 
 # TODO: Compile to build/<release or debug>/...
 # TODO: Compile as `make debug` or maybe `make lsystems_debug` ?
-# CXXFLAGS +=-DDEBUG -g -O0 # debug
-CXXFLAGS +=-O3 # release
+
+# debug
+CXXFLAGS +=-DDEBUG -g -O0 
+#CXXFLAGS +=-g -O0 
+
+# release
+CXXFLAGS +=-O3 
 
 # Files
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
@@ -22,6 +27,10 @@ SRC += $(wildcard ${SRC_DIR}/**/**/*.cpp)
 
 # Object files will retain the directory structure under the OUT_DIR
 OBJ=$(patsubst ${SRC_DIR}/%.cpp,${OUT_DIR}/%.o,${SRC})
+
+# Shaders
+SRC_SHADERS=renderer/shaders/shader.vert renderer/shaders/shader.frag
+OUT_SHADERS=${OUT_DIR}/shaders/vert.spv ${OUT_DIR}/shaders/frag.spv
 
 # ANSI escape codes for pretty output
 COLOR_RESET=\033[0m
@@ -40,7 +49,7 @@ lsystems: ${OUT_DIR}/lsystems
 run: lsystems examples/default.lsy
 	${OUT_DIR}/lsystems examples/default.lsy
 
-${OUT_DIR}/lsystems: ${OBJ} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o shaders
+${OUT_DIR}/lsystems: ${OBJ} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o ${OUT_SHADERS}
 	@echo -e "${COLOR_LINK}[CLANG]${COLOR_RESET} Linking executable ${COLOR_LINK}${COLOR_BOLD}$@${COLOR_RESET}"
 	@${CXX} ${CXXFLAGS} ${CXXLINKING} -o $@ ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o ${OBJ}
 	@echo -e "${COLOR_LINK}[OTHER]${COLOR_RESET} Building ${COLOR_LINK}${COLOR_BOLD}$@${COLOR_RESET} success!"
@@ -65,11 +74,12 @@ ${OUT_DIR}/parser.tab.o: ${OUT_DIR}/parser.tab.cpp
 	@${CXX} ${CXXFLAGS} -o $@ $< -c
 
 # TODO: Clean me up please -> dynamic shader compilation?
-shaders:
-	@echo -e "${COLOR_CXX}[GLSLC]${COLOR_RESET} Compiling shaders"
-	mkdir -p ${OUT_DIR}/shaders
-	glslc renderer/shaders/shader.vert -o ${OUT_DIR}/shaders/vert.spv
-	glslc renderer/shaders/shader.frag -o ${OUT_DIR}/shaders/frag.spv
+${OUT_SHADERS}:  ${SRC_SHADERS}
+	@echo -e "${COLOR_CXX}[GLSLC]${COLOR_RESET} Compiling shaders [0/2]"
+	@mkdir -p ${OUT_DIR}/shaders
+	@glslc renderer/shaders/shader.vert -o ${OUT_DIR}/shaders/vert.spv
+	@echo -e "${COLOR_CXX}[GLSLC]${COLOR_RESET} Compiling shaders [1/2]"
+	@glslc renderer/shaders/shader.frag -o ${OUT_DIR}/shaders/frag.spv
 
 clean:
 	@echo -e "${COLOR_CLEAN}[OTHER]${COLOR_RESET} Cleaning up ${COLOR_CLEAN}${COLOR_BOLD}${OUT_DIR}${COLOR_RESET}"

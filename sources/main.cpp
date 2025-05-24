@@ -22,12 +22,13 @@ const char* current_file_path = nullptr;
 #define ENABLE_UI
 
 int main(int argc, char* argv[]) {
-	if (argc < 2) {
+	/*	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <file_path>" << std::endl;
 		return EXIT_FAILURE;
 	}
-
 	current_file_path = argv[1];
+*/
+	current_file_path = "examples/default.lsy";
 	FILE* file = fopen(current_file_path, "r");
 	if (!file) {
 		std::cerr << "Error: Could not open file " << current_file_path << std::endl;
@@ -55,8 +56,7 @@ int main(int argc, char* argv[]) {
 #ifdef ENABLE_UI
 
 	try {
-		auto* renderer = renderer::renderer::get();
-		renderer->run();
+		renderer::renderer::get()->run();
 	} catch (const std::exception& e) {
 		std::cerr << "Exception while running: " << e.what() << std::endl;
 	} catch (...) {
