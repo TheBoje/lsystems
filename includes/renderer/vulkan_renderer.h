@@ -52,7 +52,8 @@ struct vertex {
 		return attributeDescriptions;
 	}
 };
-const std::vector<vertex> vertices = {{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}};
+const std::vector<vertex> vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
+const std::vector<uint16_t> indices = {0, 1, 2, 2, 3, 0};
 
 class renderer {
 public:
@@ -85,6 +86,7 @@ private:
 	bool createFramebuffers();
 	bool createCommandPool();
 	bool createVertexBuffer();
+	bool createIndexBuffer();
 	bool createCommandBuffers();
 	bool createSyncObjects();
 
@@ -101,7 +103,9 @@ private:
 	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
 
 	// helpers swap chain
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -150,8 +154,8 @@ private:
 	std::vector<VkFence> _inFlightFence;
 
 	// TEMP
-	VkBuffer _vertexBuffer;
-	VkDeviceMemory _vertexBufferMemory;
+	VkBuffer _vertexBuffer, _indexBuffer;
+	VkDeviceMemory _vertexBufferMemory, _indexBufferMemory;
 };
 
 } // namespace renderer
