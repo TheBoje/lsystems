@@ -52,6 +52,13 @@ struct vertex {
 		return attributeDescriptions;
 	}
 };
+
+struct UniformBufferObject {
+	glm::mat4 model;
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
 const std::vector<vertex> _vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}}, {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}};
 
 const std::vector<uint16_t> _indices = {0, 1, 2, 2, 3, 0};
@@ -83,17 +90,22 @@ private:
 	bool createSwapChain();
 	bool createImageViews();
 	bool createRenderPass();
+	bool createDescriptorSetLayout();
 	bool createGraphicsPipeline();
 	bool createFramebuffers();
 	bool createCommandPool();
 	bool createVertexBuffer();
 	bool createIndexBuffer();
+	bool createUniformBuffers();
+	bool createDescriptorPool();
+	bool createDescriptorSets();
 	bool createCommandBuffers();
 	bool createSyncObjects();
 
 	// runtime updates
 	bool cleanupSwapChain();
 	bool recreateSwapChain();
+	bool updateUniformBuffer(uint32_t frame);
 
 	// helpers
 	bool checkValidationLayerSupport();
@@ -143,8 +155,12 @@ private:
 	std::vector<VkImageView> _swapChainImageViews;
 
 	VkRenderPass _renderPass;
+	VkDescriptorSetLayout _descriptorSetLayout;
 	VkPipelineLayout _pipelineLayout;
 	VkPipeline _graphicsPipeline;
+
+	VkDescriptorPool _descriptorPool;
+	std::vector<VkDescriptorSet> _descriptorSets;
 
 	std::vector<VkFramebuffer> _swapChainFrameBuffers;
 	VkCommandPool _commandPool;
@@ -157,6 +173,10 @@ private:
 	// TEMP
 	VkBuffer _vertexBuffer, _indexBuffer;
 	VkDeviceMemory _vertexBufferMemory, _indexBufferMemory;
+
+	std::vector<VkBuffer> _uniformBuffers;
+	std::vector<VkDeviceMemory> _uniformBuffersMemory;
+	std::vector<void*> _uniformBuffersMapped;
 };
 
 } // namespace renderer
