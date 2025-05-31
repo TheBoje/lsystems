@@ -1,20 +1,29 @@
+# Use bash instead of default /bin/sh.
+SHELL := /bin/bash
+# Make bash fail and report the 1st error in ;-separated lists or pipes.
+.SHELLFLAGS := -e -o pipefail -c 
+
 # Directories
 OUT_DIR=build
 SRC_DIR=sources
 INC_DIR=includes
+INC_DIRS = $(addprefix -I, $(sort $(dir $(wildcard includes/*))))
+INC_DIRS += $(addprefix -I, $(sort $(dir $(wildcard includes/**/*))))
+INC_DIRS += $(addprefix -I, $(sort $(dir $(wildcard includes/**/**/*))))
+INC_DIRS += $(addprefix -I, $(sort $(dir $(wildcard includes/**/**/**/*))))
 
 # Compilation setup
 C=clang
 CXX=clang++
-CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} -I${INC_DIR}/ast -I${INC_DIR}/semantic_analysis -I${INC_DIR}/imgui -I${INC_DIR}/imgui/backends -I${INC_DIR}/utils -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
-CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread
+CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I/usr/include/freetype2 -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} ${INC_DIRS} -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
+CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread -lfreetype
 BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
 
 # TODO: Compile to build/<release or debug>/...
 # TODO: Compile as `make debug` or maybe `make lsystems_debug` ?
 
 # debug
-CXXFLAGS +=-DDEBUG -g -O0 
+CXXFLAGS +=-DDEBUG -g
 #CXXFLAGS +=-g -O0 
 
 # release
@@ -24,6 +33,7 @@ CXXFLAGS +=-O3
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
 SRC += $(wildcard ${SRC_DIR}/**/*.cpp)
 SRC += $(wildcard ${SRC_DIR}/**/**/*.cpp)
+SRC += $(wildcard ${SRC_DIR}/**/**/**/*.cpp)
 
 # Object files will retain the directory structure under the OUT_DIR
 OBJ=$(patsubst ${SRC_DIR}/%.cpp,${OUT_DIR}/%.o,${SRC})
