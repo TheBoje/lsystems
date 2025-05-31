@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install packages
-      run: sudo apt install -y glm
+      run: sudo apt install -y libglm-dev
     - name: make
       run: make
 #    - name: make check
