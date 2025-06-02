@@ -13,10 +13,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Install packages
-      run: sudo apt install -y libglm-dev libglfw3-dev libxxf86vm-dev libxi-dev vulkan-tools libvulkan-dev  vulkan-utility-libraries-dev spirv-tools libfontconfig1-dev glslc libfl-dev libglew-dev
+      run: sudo apt install -y libglm-dev libglfw3-dev libxxf86vm-dev libxi-dev vulkan-tools libvulkan-dev  vulkan-utility-libraries-dev spirv-tools libfontconfig1-dev glslc libfl-dev libglew-dev ccache
+
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        create-symlink: true
+
     - name: make
-      run: make
-#    - name: make check
-#      run: make check
+      run: make -j4 CXX="ccache clang++"
+
+    - name: ccache stats
+      run: ccache -s
 
