@@ -30,9 +30,6 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
-
 const std::string MODEL_OBJ_PATH = "renderer/models/viking_room/viking_room.obj";
 const std::string MODEL_TEX_PATH = "renderer/models/viking_room/viking_room.png";
 
@@ -867,8 +864,8 @@ bool renderer::createDescriptorSetLayout() {
 }
 
 bool renderer::createGraphicsPipeline() {
-	auto fragShaderCode = readFile("build/shaders/frag.spv");
-	auto vertShaderCode = readFile("build/shaders/vert.spv");
+	auto fragShaderCode = readFile("build/shaders/shader.frag.spv");
+	auto vertShaderCode = readFile("build/shaders/shader.vert.spv");
 
 	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
 	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
