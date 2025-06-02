@@ -14,8 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install packages
-      run: sudo apt install -y libglm-dev libglfw3-dev libxxf86vm-dev libxi-dev vulkan-tools libvulkan-dev  vulkan-utility-libraries-dev spirv-tools libfontconfig1-dev glslc libfl-dev libglew-dev ccache
+    - uses: awalsh128/cache-apt-pkgs-action@latest
+      with:
+        packages: libglm-dev libglfw3-dev libxxf86vm-dev libxi-dev vulkan-tools libvulkan-dev  vulkan-utility-libraries-dev spirv-tools libfontconfig1-dev glslc libfl-dev libglew-dev ccache
+        version: 1.0
+        execute_install_scripts: true
 
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
