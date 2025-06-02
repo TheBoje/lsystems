@@ -62,6 +62,7 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Error while running." << std::endl;
 	}
 
+	std::cout << "bye!" << std::endl;
 #endif
 
 	return EXIT_SUCCESS;

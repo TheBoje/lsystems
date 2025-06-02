@@ -137,7 +137,8 @@ private:
 	bool cleanupSwapChain();
 	bool recreateSwapChain();
 	bool updateUniformBuffer(uint32_t frame);
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) const;
+	void generateMipmaps(VkImage image, VkFormat format, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels) const;
 
 	// helpers
 	bool checkValidationLayerSupport();
@@ -151,10 +152,17 @@ private:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
-	void createImage(
-		uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) const;
+	void createImage(uint32_t width,
+		uint32_t height,
+		uint32_t mipLevels,
+		VkFormat format,
+		VkImageTiling tiling,
+		VkImageUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkImage& image,
+		VkDeviceMemory& imageMemory) const;
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) const;
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 	VkFormat findDepthFormat() const;
 	bool hasStencilComponent(VkFormat format) const;
@@ -222,6 +230,7 @@ private:
 	std::vector<void*> _uniformBuffersMapped;
 
 	// Texture
+	uint32_t _mipLevels;
 	VkImage _textureImage;
 	VkDeviceMemory _textureImageMemory;
 	VkImageView _textureImageView;
