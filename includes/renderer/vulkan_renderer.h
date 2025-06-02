@@ -9,7 +9,10 @@
 #include <string>
 
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 
@@ -38,7 +41,7 @@ struct SwapChainSupportDetails {
 };
 
 struct vertex {
-	glm::vec2 pos;
+	glm::vec3 pos;
 	glm::vec3 color;
 	glm::vec2 texCoord;
 
@@ -56,7 +59,7 @@ struct vertex {
 
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[0].offset = offsetof(vertex, pos);
 
 		attributeDescriptions[1].binding = 0;
@@ -79,12 +82,17 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 proj;
 };
 
-const std::vector<vertex> _vertices = {{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-	{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}};
+const std::vector<vertex> _vertices = {{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
 
-const std::vector<uint16_t> _indices = {0, 1, 2, 2, 3, 0};
+	{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+	{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+	{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
+
+const std::vector<uint16_t> _indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 class renderer {
 public:
@@ -117,6 +125,7 @@ private:
 	bool createGraphicsPipeline();
 	bool createFramebuffers();
 	bool createCommandPool();
+	bool createDepthResources();
 	bool createTextureImage();
 	bool createTextureImageView();
 	bool createTextureSampler();
@@ -150,7 +159,10 @@ private:
 	void createImage(
 		uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) const;
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
-	VkImageView createImageView(VkImage image, VkFormat format) const;
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
+	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
+	VkFormat findDepthFormat() const;
+	bool hasStencilComponent(VkFormat format) const;
 
 	// helpers swap chain
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -217,6 +229,11 @@ private:
 	VkDeviceMemory _textureImageMemory;
 	VkImageView _textureImageView;
 	VkSampler _textureSampler;
+
+	// Depth
+	VkImage _depthImage;
+	VkDeviceMemory _depthImageMemory;
+	VkImageView _depthImageView;
 
 	// Imgui
 	VkDescriptorPool _imguiDescriptorPool;
