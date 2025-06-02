@@ -123,6 +123,7 @@ private:
 	bool createTextureImage();
 	bool createTextureImageView();
 	bool createTextureSampler();
+	bool createColorResources();
 	bool loadModel(const std::string& pathToObj);
 	bool createVertexBuffer();
 	bool createIndexBuffer();
@@ -155,6 +156,7 @@ private:
 	void createImage(uint32_t width,
 		uint32_t height,
 		uint32_t mipLevels,
+		VkSampleCountFlagBits numSamples,
 		VkFormat format,
 		VkImageTiling tiling,
 		VkImageUsageFlags usage,
@@ -166,6 +168,7 @@ private:
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 	VkFormat findDepthFormat() const;
 	bool hasStencilComponent(VkFormat format) const;
+	VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
 	// helpers swap chain
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -235,6 +238,12 @@ private:
 	VkDeviceMemory _textureImageMemory;
 	VkImageView _textureImageView;
 	VkSampler _textureSampler;
+
+	// Msaa
+	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
+	VkImage colorImage;
+	VkDeviceMemory colorImageMemory;
+	VkImageView colorImageView;
 
 	// Depth
 	VkImage _depthImage;
