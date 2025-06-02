@@ -10,8 +10,10 @@
 
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
@@ -74,6 +76,10 @@ struct vertex {
 
 		return attributeDescriptions;
 	}
+
+	bool operator==(const vertex& other) const {
+		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+	}
 };
 
 struct UniformBufferObject {
@@ -81,18 +87,6 @@ struct UniformBufferObject {
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 proj;
 };
-
-const std::vector<vertex> _vertices = {{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-
-	{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-	{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-	{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-	{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}};
-
-const std::vector<uint16_t> _indices = {0, 1, 2, 2, 3, 0, 4, 5, 6, 6, 7, 4};
 
 class renderer {
 public:
@@ -129,6 +123,7 @@ private:
 	bool createTextureImage();
 	bool createTextureImageView();
 	bool createTextureSampler();
+	bool loadModel(const std::string& pathToObj);
 	bool createVertexBuffer();
 	bool createIndexBuffer();
 	bool createUniformBuffers();
@@ -216,7 +211,9 @@ private:
 	std::vector<VkSemaphore> _renderFinishedSemaphore;
 	std::vector<VkFence> _inFlightFence;
 
-	// TEMP
+	// vertex and index
+	std::vector<vertex> _vertices;
+	std::vector<uint32_t> _indices;
 	VkBuffer _vertexBuffer, _indexBuffer;
 	VkDeviceMemory _vertexBufferMemory, _indexBufferMemory;
 
@@ -243,3 +240,12 @@ private:
 };
 
 } // namespace renderer
+
+namespace std {
+template <>
+struct hash<renderer::vertex> {
+	size_t operator()(renderer::vertex const& vertex) const {
+		return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
+	}
+};
+} // namespace std

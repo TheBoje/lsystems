@@ -10,10 +10,12 @@
 #include <cassert>
 #include <cstdint>
 #include <chrono>
+#include <filesystem>
 #include <stdexcept>
 #include <iostream>
 #include <set>
 #include <limits>
+#include <unordered_map>
 #include <fstream>
 
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
@@ -24,6 +26,15 @@
 #include <vulkan/vulkan_core.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
+
+const uint32_t WIDTH = 800;
+const uint32_t HEIGHT = 600;
+
+const std::string MODEL_OBJ_PATH = "renderer/models/viking_room/viking_room.obj";
+const std::string MODEL_TEX_PATH = "renderer/models/viking_room/viking_room.png";
 
 static void framebufferResizeCallback(GLFWwindow* window, int, int) {
 	auto renderer = reinterpret_cast<renderer::renderer*>(glfwGetWindowUserPointer(window));
@@ -155,6 +166,10 @@ bool renderer::setup() {
 void renderer::run() {
 	while (!glfwWindowShouldClose(_window) && _bKeepAlive) {
 		glfwPollEvents();
+		if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+			_bKeepAlive = false;
+			continue;
+		}
 
 		render();
 	}
@@ -255,6 +270,7 @@ bool renderer::initVulkan() {
 	createTextureImage();
 	createTextureImageView();
 	createTextureSampler();
+	loadModel(MODEL_OBJ_PATH);
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
@@ -1073,7 +1089,7 @@ bool renderer::createDepthResources() {
 
 bool renderer::createTextureImage() {
 	int textureWidth, textureHeight, textureChannels;
-	stbi_uc* pixels = stbi_load("renderer/textures/texture.jpg", &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = stbi_load(MODEL_TEX_PATH.c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
 
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image");
@@ -1141,6 +1157,43 @@ bool renderer::createTextureSampler() {
 
 	auto err = vkCreateSampler(_device, &samplerInfo, nullptr, &_textureSampler);
 	check_result_fn(err);
+
+	return true;
+}
+
+bool renderer::loadModel(const std::string& pathToObj) {
+	tinyobj::attrib_t attrib;
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::string warn, err;
+
+	if (!std::filesystem::exists(pathToObj)) {
+		throw std::runtime_error("cannot find file " + pathToObj);
+	}
+
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, pathToObj.c_str())) {
+		throw std::runtime_error(warn + err);
+	}
+
+	std::unordered_map<vertex, uint32_t> uniqueVertices {};
+
+	for (const auto& shape : shapes) {
+		for (const auto& index : shape.mesh.indices) {
+			vertex v {};
+			v.pos = {attrib.vertices[3 * index.vertex_index + 0], attrib.vertices[3 * index.vertex_index + 1], attrib.vertices[3 * index.vertex_index + 2]};
+
+			v.texCoord = {attrib.texcoords[2 * index.texcoord_index + 0], 1.0f - attrib.texcoords[2 * index.texcoord_index + 1]};
+
+			v.color = {1.0f, 1.0f, 1.0f};
+
+			if (uniqueVertices.count(v) == 0) {
+				uniqueVertices[v] = static_cast<uint32_t>(_vertices.size());
+				_vertices.push_back(v);
+			}
+
+			_indices.push_back(uniqueVertices[v]);
+		}
+	}
 
 	return true;
 }
@@ -1324,7 +1377,7 @@ void renderer::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	vkCmdBindIndexBuffer(commandBuffer, _indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(commandBuffer, _indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	VkViewport viewport {};
 	viewport.x = 0.0f;

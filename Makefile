@@ -8,9 +8,9 @@ OUT_DIR=build
 SRC_DIR=sources
 INC_DIR=includes
 INC_DIRS = $(addprefix -I, $(sort $(dir $(wildcard includes/*))))
-INC_DIRS += $(addprefix -I, $(sort $(dir $(wildcard includes/**/*))))
-INC_DIRS += $(addprefix -I, $(sort $(dir $(wildcard includes/**/**/*))))
-INC_DIRS += $(addprefix -I, $(sort $(dir $(wildcard includes/**/**/**/*))))
+INC_DIRS+= $(addprefix -I, $(sort $(dir $(wildcard includes/**/*))))
+INC_DIRS+= $(addprefix -I, $(sort $(dir $(wildcard includes/**/**/*))))
+INC_DIRS+= $(addprefix -I, $(sort $(dir $(wildcard includes/**/**/**/*))))
 
 # Compilation setup
 C=clang
@@ -23,11 +23,10 @@ BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamp
 # TODO: Compile as `make debug` or maybe `make lsystems_debug` ?
 
 # debug
-CXXFLAGS +=-DDEBUG -g
-#CXXFLAGS +=-g -O0 
+CXXFLAGS +=-DDEBUG -g -O0
 
 # release
-CXXFLAGS +=-O3 
+#CXXFLAGS +=-O3 
 
 # Files
 SRC=$(wildcard ${SRC_DIR}/*.cpp)
