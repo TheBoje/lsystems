@@ -4,6 +4,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#include "implot.h"
 #include "macros.h"
 
 #include <algorithm>
@@ -15,6 +16,7 @@
 #include <iostream>
 #include <set>
 #include <limits>
+#include <thread>
 #include <unordered_map>
 #include <fstream>
 
@@ -52,8 +54,8 @@ namespace renderer {
 using glm::radians;
 using std::vector;
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+const uint32_t WIDTH = 1200;
+const uint32_t HEIGHT = 1000;
 
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
 	auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
@@ -146,6 +148,7 @@ renderer::~renderer() {
 
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
+	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 
 	glfwDestroyWindow(_window);
@@ -185,17 +188,7 @@ void renderer::render() {
 		check_result_fn(result);
 	}
 
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-
-	{
-		// imgui commands
-		ImGui::ShowDemoWindow();
-	}
-
-	ImGui::Render();
-
+	drawImgui();
 	vkResetFences(_device, 1, &_inFlightFence[_currentFrame]);
 
 	vkResetCommandBuffer(_commandBuffers[_currentFrame], 0);
@@ -220,6 +213,13 @@ void renderer::render() {
 
 	auto err = vkQueueSubmit(_graphicsQueue, 1, &submitInfo, _inFlightFence[_currentFrame]);
 	check_result_fn(err);
+
+	// TODO: Use vulkan specific wait? VkWaitForPresentKHR maybe?
+	if (_bLimitFps) {
+		if (ImGui::GetIO().DeltaTime <= (1.0 / 60.0)) {
+			std::this_thread::sleep_for(std::chrono::duration<double, std::milli>((1.0 / 60.0) * 1000.0));
+		}
+	}
 
 	// present frame
 	VkSwapchainKHR swapChains[] = {_swapChain};
@@ -556,20 +556,20 @@ bool renderer::pickPhysicalDevice() {
 	std::vector<VkPhysicalDevice> devices(deviceCount);
 	vkEnumeratePhysicalDevices(_instance, &deviceCount, devices.data());
 
-	/*
 	for (const auto& device : devices) {
 		if (isDeviceSuitable(device)) {
 			_physicalDevice = device;
 			break;
 		}
 	}
-    */
+	/*
 	for (std::vector<VkPhysicalDevice>::reverse_iterator riter = devices.rbegin(); riter != devices.rend(); ++riter) {
 		if (isDeviceSuitable(*riter)) {
 			_physicalDevice = *riter;
 			break;
 		}
 	}
+    */
 
 	if (_physicalDevice == VK_NULL_HANDLE) {
 		throw std::runtime_error("failed to find a suitable GPU!");
@@ -762,7 +762,6 @@ bool renderer::createSwapChain() {
 	VkSwapchainCreateInfoKHR createInfo {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
 	createInfo.surface = _surface;
-
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -1535,6 +1534,7 @@ bool renderer::createSyncObjects() {
 bool renderer::initImgui() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImPlot::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
@@ -1552,7 +1552,7 @@ bool renderer::initImgui() {
 	init_info.Subpass = 0;
 	init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
 	init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
-	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	init_info.MSAASamples = msaaSamples;
 	init_info.CheckVkResultFn = &check_result_fn;
 	init_info.RenderPass = _renderPass;
 
@@ -1560,6 +1560,44 @@ bool renderer::initImgui() {
 	ImGui_ImplVulkan_CreateFontsTexture();
 
 	return true;
+}
+
+void renderer::drawImgui() {
+	using namespace ImGui;
+
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	NewFrame();
+
+	auto io = GetIO();
+	if (Begin("Lsystems")) {
+		if (CollapsingHeader("Metrics", nullptr, ImGuiTreeNodeFlags_DefaultOpen)) {
+			Checkbox("Limit FPS", &_bLimitFps);
+			Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+			static ScrollingBuffer fpsData;
+			static float time = 0;
+			time += io.DeltaTime;
+			fpsData.AddPoint(time, io.Framerate);
+
+			static float history = 10.0f;
+			ImGui::SliderFloat("History", &history, 1, 30, "%.1f s");
+			if (ImPlot::BeginPlot("FPS", ImVec2(-1, 150))) {
+				ImPlot::SetupAxes(nullptr, nullptr);
+				ImPlot::SetupAxisLimits(ImAxis_X1, time - history, time, ImGuiCond_Always);
+				ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 200);
+				ImPlot::SetNextFillStyle(IMPLOT_AUTO_COL, 0.5f);
+				ImPlot::PlotLine("FPS", &fpsData.Data[0].x, &fpsData.Data[0].y, fpsData.Data.size(), 0, fpsData.Offset, 2 * sizeof(float));
+
+				ImPlot::EndPlot();
+			}
+		}
+		End();
+	}
+
+	//	ShowDemoWindow();
+
+	Render();
 }
 
 bool renderer::cleanupSwapChain() {

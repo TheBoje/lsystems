@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <optional>
 #include <array>
+#include <queue>
 #include <vector>
 #include <string>
 
@@ -132,7 +133,10 @@ private:
 	bool createDescriptorSets();
 	bool createCommandBuffers();
 	bool createSyncObjects();
+
+	// Imgui
 	bool initImgui();
+	void drawImgui();
 
 	// runtime updates
 	bool cleanupSwapChain();
@@ -188,6 +192,7 @@ private:
 private:
 	GLFWwindow* _window = nullptr;
 	bool _bKeepAlive = true;
+	bool _bLimitFps = false;
 	uint32_t _currentFrame = 0;
 
 	VkInstance _instance;
@@ -255,6 +260,32 @@ private:
 	VkRenderPass _imguiRenderPass;
 	VkCommandBuffer _imguiCommandBuffer;
 	VkFramebuffer _imguiFrameBuffer;
+};
+
+// TODO: Move me!
+struct ScrollingBuffer {
+	int MaxSize;
+	int Offset;
+	ImVector<ImVec2> Data;
+	ScrollingBuffer(int max_size = 2000) {
+		MaxSize = max_size;
+		Offset = 0;
+		Data.reserve(MaxSize);
+	}
+	void AddPoint(float x, float y) {
+		if (Data.size() < MaxSize)
+			Data.push_back(ImVec2(x, y));
+		else {
+			Data[Offset] = ImVec2(x, y);
+			Offset = (Offset + 1) % MaxSize;
+		}
+	}
+	void Erase() {
+		if (Data.size() > 0) {
+			Data.shrink(0);
+			Offset = 0;
+		}
+	}
 };
 
 } // namespace renderer
