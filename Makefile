@@ -21,14 +21,20 @@ CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I/usr/include/
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread -lfreetype
 BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
 
-# TODO: Compile to build/<release or debug>/...
-# TODO: Compile as `make debug` or maybe `make lsystems_debug` ?
+ifeq ($(MAKECMDGOALS), test)
+  CXXFLAGS   += -fprofile-arcs -ftest-coverage -g -fprofile-instr-generate -fcoverage-mapping
+  CXXLINKING += -lgcov
+else
+  CXXFLAGS   += -DENABLE_UI
+endif
 
-# debug
-CXXFLAGS +=-DDEBUG -g -O0
+ifeq ($(MAKECMDGOALS), release)
+  CXXFLAGS +=-O3 
+endif
 
-# release
-#CXXFLAGS +=-O3 
+ifeq ($(MAKECMDGOALS), debug)
+  CXXFLAGS +=-DDEBUG -g -O0
+endif
 
 # Files
 SRC  = $(wildcard ${SRC_DIR}/*.cpp)
@@ -51,7 +57,14 @@ COLOR_CXX  =\033[1;34m
 COLOR_FLEX =\033[1;35m
 COLOR_BISON=\033[1;36m
 
-default: lsystems
+release: lsystems
+debug: lsystems
+
+test: lsystems tests/run_tests.py
+	LLVM_PROFILE_FILE="build/lsystems.profraw" pytest tests/run_tests.py
+	@llvm-profdata merge -output=build/lsystems.profdata build/lsystems.profraw
+	@llvm-cov show build/lsystems -instr-profile=build/lsystems.profdata -format=html -output-dir=build/coverage_report
+	@llvm-cov report build/lsystems -instr-profile=build/lsystems.profdata
 
 lsystems: ${OUT_DIR}/lsystems ${OBJ_SHADER}
 
@@ -60,12 +73,12 @@ run: lsystems examples/default.lsy
 
 ${OUT_DIR}/lsystems: ${OBJ} ${OUT_SHADERS} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o 
 	@echo -e "${COLOR_LINK}[CLANG]${COLOR_RESET} Linking executable ${COLOR_LINK}${COLOR_BOLD}$(@F)${COLOR_RESET}"
-	@${CXX} ${CXXFLAGS} ${CXXLINKING} -o $@ $^ # ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o ${OBJ} 
+	@${CXX} ${CXXFLAGS} ${CXXLINKING} -o $@ $^
 	@echo -e "${COLOR_LINK}[OTHER]${COLOR_RESET} Building ${COLOR_LINK}${COLOR_BOLD}$(@F)${COLOR_RESET} success!"
 
 ${OUT_DIR}/%.o: ${SRC_DIR}/%.cpp ${OUT_DIR}/lex.yy.cpp
 	@echo -e "${COLOR_CXX}[CLANG]${COLOR_RESET} Compiling ${COLOR_CXX}${COLOR_BOLD}$(@F)${COLOR_RESET} ($(notdir $<))"
-	@mkdir -p $(@D)  # Ensure subdirectories are created
+	@mkdir -p $(@D)
 	@${CXX} ${CXXFLAGS} -o $@ $< -c
 
 ${OUT_DIR}/lex.yy.cpp: ${SRC_DIR}/lexer.ll ${OUT_DIR}/parser.tab.h

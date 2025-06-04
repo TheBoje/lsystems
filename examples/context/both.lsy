@@ -2,6 +2,7 @@ DERIVATION: 5;
 ANGLE_FACTOR: 60.0;
 SCALE_FACTOR: 1.0;
 AXIOM:baaaaaaaaab;
+IGNORE: c;
 
 PRODUCTIONS:
     a < a > b --> b;

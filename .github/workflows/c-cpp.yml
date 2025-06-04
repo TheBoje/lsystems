@@ -25,8 +25,17 @@ jobs:
       with:
         create-symlink: true
 
-    - name: make
-      run: make -j4 CXX="ccache clang++"
+    - name: make release
+      run: make clean
+      run: make -j4 CXX="ccache clang++" release
+
+    - name: make debug
+      run: make clean
+      run: make -j4 CXX="ccache clang++" debug
+
+    - name: run tests  
+      run: make clean
+      run: make -j4 CXX="ccache clang++" test
 
     - name: ccache stats
       run: ccache -s

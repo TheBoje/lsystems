@@ -1,0 +1,20 @@
+node: * < a > b --> b
+node: * < b > * --> a
+config: 
+	derivation: 9
+	angle factor: 60
+	scale factor: 1
+	axiom: aaaaaaaaab
+	ignore: c
+
+derivation 0/9: aaaaaaaaab
+derivation 1/9: aaaaaaaaba
+derivation 2/9: aaaaaaabaa
+derivation 3/9: aaaaaabaaa
+derivation 4/9: aaaaabaaaa
+derivation 5/9: aaaabaaaaa
+derivation 6/9: aaabaaaaaa
+derivation 7/9: aabaaaaaaa
+derivation 8/9: abaaaaaaaa
+derivation 9/9: baaaaaaaaa
+baaaaaaaaa

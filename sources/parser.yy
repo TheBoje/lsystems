@@ -38,6 +38,7 @@ bool has_printed_line_info = false;
 }
 
 %locations
+%define parse.error detailed
 %start input
 
 %token DERIVATION ANGLE_FACTOR SCALE_FACTOR AXIOM IGNORE PRODUCTIONS END_PRODUCTIONS

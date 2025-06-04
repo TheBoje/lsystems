@@ -19,7 +19,7 @@ extern ast::configuration* config;
 
 const char* current_file_path = nullptr;
 
-#define ENABLE_UI
+//#define ENABLE_UI
 
 int main(int argc, char* argv[]) {
 	if (argc >= 2) {
