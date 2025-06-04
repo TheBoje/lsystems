@@ -1,0 +1,4 @@
+syntax error: expected ";" before "SCALE_FACTOR:": line 3, column 1 to line 3, column 13:
+SCALE_FACTOR: 1.0;
+^^^^^^^^^^^^^
+

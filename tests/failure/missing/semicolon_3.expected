@@ -1,0 +1,4 @@
+syntax error: expected ";" before "IGNORE:": line 5, column 1 to line 5, column 7:
+IGNORE:A;
+^^^^^^^
+

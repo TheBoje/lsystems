@@ -1,0 +1,4 @@
+syntax error: expected ";" before "ANGLE_FACTOR:": line 2, column 1 to line 2, column 13:
+ANGLE_FACTOR: 60.0;
+^^^^^^^^^^^^^
+

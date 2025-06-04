@@ -6,7 +6,7 @@
             "request": "launch",
             "name": "Launch Lsystems (default)",
             "stdio": [
-                "examples/default.lsy",
+                "tests/failure/missing/semicolon_0.lsy",
                 null
             ],
             "preLaunchTask": "Compile",

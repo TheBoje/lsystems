@@ -1,0 +1,4 @@
+syntax error: expected ";" before "END_PRODUCTIONS": line 10, column 1 to line 10, column 15:
+END_PRODUCTIONS;
+^^^^^^^^^^^^^^^
+

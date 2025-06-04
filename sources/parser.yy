@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <fstream>
 #include <sstream>
+#include <filesystem>
 #include <string.h>
 
 #include "ast/ast.h"
@@ -13,7 +15,7 @@ ast::configuration* config = new ast::configuration();
 
 #include "locations.h"
 
-// #define LSY_DEBUG
+//#define LSY_DEBUG
 #ifdef LSY_DEBUG
 #define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #else
@@ -38,14 +40,25 @@ bool has_printed_line_info = false;
 }
 
 %locations
-%define parse.error detailed
+%define parse.error custom
 %start input
 
-%token DERIVATION ANGLE_FACTOR SCALE_FACTOR AXIOM IGNORE PRODUCTIONS END_PRODUCTIONS
-%token CONTEXT_LEFT CONTEXT_RIGHT IMPLIES SEMICOLON
-%token FLOAT INTEGER ANY_TOKEN
+%token DERIVATION       "DERIVATION:"
+%token ANGLE_FACTOR     "ANGLE_FACTOR:"
+%token SCALE_FACTOR     "SCALE_FACTOR:"
+%token AXIOM            "AXIOM:"
+%token IGNORE           "IGNORE:"
+%token PRODUCTIONS      "PRODUCTIONS:"
+%token END_PRODUCTIONS  "END_PRODUCTIONS"
+%token CONTEXT_LEFT     "<"
+%token CONTEXT_RIGHT    ">"
+%token IMPLIES          "-->"
+%token SEMICOLON        ";"
+%token FLOAT            "float"
+%token INTEGER          "integer"
+%token ANY_TOKEN        "*"
 
-%token <symbol_node> SYMBOL
+%token <symbol_node> SYMBOL "symbol"
 %type  <context_node> context
 %type  <symbol_node> symbol
 %type  <production_node> production
@@ -68,29 +81,21 @@ input: config axiom ignore productions {} ;
 config: derivation angle_factor scale_factor {} ;
 
 derivation: DERIVATION INTEGER SEMICOLON { DEBUG_PRINT("Derivation set to: %d\n", yylval.ival); config->derivation = yylval.ival; }
-    | DERIVATION INTEGER error { yyerror("syntax error: expected semicolon"); return EXIT_FAILURE; }
     ;
 
 angle_factor: ANGLE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Angle factor set to: %f\n", yylval.fval); config->angle_factor = yylval.fval; }
-    | ANGLE_FACTOR FLOAT error { yyerror("syntax error: expected semicolon"); return EXIT_FAILURE; }
     ;
 
 scale_factor: SCALE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Scale factor set to: %f\n", yylval.fval); config->scale_factor = yylval.fval; }
-    | SCALE_FACTOR FLOAT error { yyerror("syntax error: expected semicolon"); return EXIT_FAILURE; }
     ;
 
 axiom: AXIOM SYMBOL SEMICOLON { DEBUG_PRINT("Axiom set to: %s\n", yylval.sval); config->axiom = yylval.sval; }
-    | AXIOM SYMBOL error { yyerror("syntax error: expected semicolon"); return EXIT_FAILURE; }
     ;
 
 ignore: IGNORE SYMBOL SEMICOLON { DEBUG_PRINT("Ignore set to: %s\n", yylval.sval); config->ignore = yylval.sval; }
-    | IGNORE SYMBOL error { yyerror("syntax error: expected semicolon"); return EXIT_FAILURE; }
     ;
 
 productions: PRODUCTIONS production_list END_PRODUCTIONS SEMICOLON { DEBUG_PRINT("Productions parsed.\n"); }
-    | PRODUCTIONS production_list END_PRODUCTIONS error     { yyerror("syntax error: expected semicolon");                 return EXIT_FAILURE; }
-    | PRODUCTIONS production_list error           SEMICOLON { yyerror("syntax error: expected 'END_PRODUCTIONS' keyword"); return EXIT_FAILURE; }
-    | error       production_list END_PRODUCTIONS SEMICOLON { yyerror("syntax error: expected 'PRODUCTIONS' keyword");     return EXIT_FAILURE; }
     ;
 
 production_list: production { DEBUG_PRINT("Single production added.\n"); }
@@ -106,10 +111,6 @@ production: context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol SEM
             replacement->result_symbol->symbol.c_str());
         vAst.push_back(new ast::production_node($1, $3, $5, replacement));
     }
-    | context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol error     { yyerror("syntax error: expected semicolon"); return EXIT_FAILURE; }
-    | context CONTEXT_LEFT symbol CONTEXT_RIGHT context error   symbol SEMICOLON { yyerror("syntax error: expected '-->'");     return EXIT_FAILURE; }
-    | context CONTEXT_LEFT symbol error         context IMPLIES symbol SEMICOLON { yyerror("syntax error: expected '>'");       return EXIT_FAILURE; }
-    | context error        symbol CONTEXT_RIGHT context IMPLIES symbol SEMICOLON { yyerror("syntax error: expected '<'");       return EXIT_FAILURE; }
     ;
 
 context: ANY_TOKEN { DEBUG_PRINT("Context set to null.\n"); $$ = nullptr; }
@@ -123,21 +124,25 @@ symbol: SYMBOL { DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval); $$ = new a
 
 %%
 
-void yyerror(const char *message) {
+void yyerror(const char * /*message*/ ) {
     // FIXME(Louis): There is both C and C++ code here, might be easier to use only C++?
+    // FIXME(Louis): use message? for now, only supports syntax error. Maybe report semantic errors?
+
+    if (has_printed_line_info) {
+        return;
+    }
 
     std::ostringstream error_message;
-    if (current_file_path) {
-        FILE* file = fopen(current_file_path, "r");
+    if (current_file_path && std::filesystem::exists(current_file_path)) {
+        std::ifstream file(current_file_path);
         if (file) {
-            char line[1024]; // FIXME(Louis): This could be better.
+            std::string line;
             int current_line = 1;
 
-            while (fgets(line, sizeof(line), file)) {
+            while (std::getline(file, line)) {
                 if (current_line == yylloc.first_line) {
-                    error_message << line;
+                    error_message << line << "\n";
 
-                    // Underline error
                     for (int i = 0; i < yylloc.first_column - 1; i++) {
                         error_message << " ";
                     }
@@ -147,27 +152,50 @@ void yyerror(const char *message) {
                     error_message << "\n";
                     break;
                 }
-                yylloc.first_column -= strlen(line);
-                yylloc.last_column -= strlen(line);
+
+                yylloc.first_column -= static_cast<int>(line.length()) + 1;
+                yylloc.last_column -= static_cast<int>(line.length()) + 1;
                 current_line++;
             }
-            fclose(file);
         }
     }
 
-    if (!has_printed_line_info) {
-        printf("%s: line %d, column %d to line %d, column %d:\n",
-               message,
-               yylloc.first_line,
-               yylloc.first_column,
-               yylloc.last_line,
-               yylloc.last_column);
-        has_printed_line_info = true;
-    }
+    printf(": line %d, column %d to line %d, column %d:\n",
+        yylloc.first_line,
+        yylloc.first_column,
+        yylloc.last_line,
+        yylloc.last_column);
+    has_printed_line_info = true;
 
     printf("%s\n", error_message.str().c_str());
+}
 
-    if (current_token) {
-        printf("Failed at token: %s (%s)\n", current_token, current_token_type);
+static int yyreport_syntax_error (const yypcontext_t *ctx)
+{
+    int res = 0;
+    printf("syntax error");
+    // Report the tokens expected at this point.
+    {
+        enum { TOKENMAX = 5 };
+        yysymbol_kind_t expected[TOKENMAX];
+
+        int n = yypcontext_expected_tokens (ctx, expected, TOKENMAX);
+        if (n < 0) {
+            res = n;
+        } else {
+            for (int i = 0; i < n; ++i) {
+                printf("%s \"%s\"",i == 0 ? ": expected" : " or", yysymbol_name (expected[i]));
+            }
+        }
     }
+
+    // Report the unexpected token.
+    {
+        yysymbol_kind_t lookahead = yypcontext_token (ctx);
+        if (lookahead != YYSYMBOL_YYEMPTY) {
+            printf(" before \"%s\"", yysymbol_name (lookahead));
+        }
+    }
+    yyerror("");
+    return res;
 }

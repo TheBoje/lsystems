@@ -1,9 +1,4 @@
-syntax error, unexpected ANY_TOKEN, expecting CONTEXT_RIGHT: line 8, column 12 to line 8, column 12:
+syntax error: expected ">" before "*": line 8, column 12 to line 8, column 12:
     * < F  * --> FF;
            ^
 
-Failed at token: * (ANY_TOKEN)
-    * < F  * --> FF;
-                   ^
-
-Failed at token: ; (SEMICOLON)

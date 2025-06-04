@@ -1,0 +1,4 @@
+syntax error: expected ";" before "symbol": line 9, column 5 to line 9, column 5:
+    F < F > * --> FF;
+    ^
+

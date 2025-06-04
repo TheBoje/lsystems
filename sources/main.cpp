@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 	if (argc >= 2) {
 		current_file_path = argv[1];
 	} else {
-		current_file_path = "examples/default.lsy";
+		current_file_path = "tests/failure/missing/semicolon_0.lsy";
 	}
 
 	FILE* file = fopen(current_file_path, "r");
