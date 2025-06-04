@@ -16,7 +16,7 @@ jobs:
 
     - uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        packages: libglm-dev libglfw3-dev libxxf86vm-dev libxi-dev vulkan-tools libvulkan-dev  vulkan-utility-libraries-dev spirv-tools libfontconfig1-dev glslc libfl-dev libglew-dev ccache
+        packages: libglm-dev libglfw3-dev libxxf86vm-dev libxi-dev vulkan-tools libvulkan-dev  vulkan-utility-libraries-dev spirv-tools libfontconfig1-dev glslc libfl-dev libglew-dev ccache llvm
         version: 1.0
         execute_install_scripts: true
 
@@ -26,16 +26,13 @@ jobs:
         create-symlink: true
 
     - name: make release
-      run: make clean
-      run: make -j4 CXX="ccache clang++" release
+      run: make clean && make -j4 CXX="ccache clang++" release
 
     - name: make debug
-      run: make clean
-      run: make -j4 CXX="ccache clang++" debug
+      run: make clean && make -j4 CXX="ccache clang++" debug
 
     - name: run tests  
-      run: make clean
-      run: make -j4 CXX="ccache clang++" test
+      run: make clean && make -j4 CXX="ccache clang++" test
 
     - name: ccache stats
       run: ccache -s
