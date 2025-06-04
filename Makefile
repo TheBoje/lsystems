@@ -21,7 +21,7 @@ CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I/usr/include/
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread -lfreetype
 BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
 
-ifeq ($(MAKECMDGOALS), test)
+ifeq ($(MAKECMDGOALS), profile)
   CXXFLAGS   += -fprofile-arcs -ftest-coverage -g -fprofile-instr-generate -fcoverage-mapping
   CXXLINKING += -lgcov
 #else
@@ -61,9 +61,10 @@ release: lsystems
 debug: lsystems
 
 test: lsystems tests/run_tests.py
-	@LLVM_PROFILE_FILE="build/lsystems.profraw" pytest tests/run_tests.py
+	@pytest tests/run_tests.py
 
-profile: test
+profile: lsystems tests/run_tests.py
+	@LLVM_PROFILE_FILE="build/lsystems.profraw" pytest tests/run_tests.py
 	@llvm-profdata merge -output=build/lsystems.profdata build/lsystems.profraw
 	@llvm-cov show build/lsystems -instr-profile=build/lsystems.profdata -format=html -output-dir=build/coverage_report
 	@llvm-cov report build/lsystems -instr-profile=build/lsystems.profdata
