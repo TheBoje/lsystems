@@ -1,0 +1,18 @@
+node: a < a > b --> b
+node: b < a > a --> b
+node: b < a > b --> A
+node: * < b > * --> a
+config: 
+	derivation: 5
+	angle factor: 60
+	scale factor: 1
+	axiom: baaaaaaaaab
+	ignore: c
+
+derivation 0/5: baaaaaaaaab
+derivation 1/5: abaaaaaaaba
+derivation 2/5: aabaaaaabaa
+derivation 3/5: ababaaababa
+derivation 4/5: aaAababaAaa
+derivation 5/5: aaAaaAaaAaa
+aaAaaAaaAaa

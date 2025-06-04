@@ -24,8 +24,8 @@ BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamp
 ifeq ($(MAKECMDGOALS), test)
   CXXFLAGS   += -fprofile-arcs -ftest-coverage -g -fprofile-instr-generate -fcoverage-mapping
   CXXLINKING += -lgcov
-else
-  CXXFLAGS   += -DENABLE_UI
+#else
+#  CXXFLAGS   += -DENABLE_UI
 endif
 
 ifeq ($(MAKECMDGOALS), release)
@@ -61,7 +61,9 @@ release: lsystems
 debug: lsystems
 
 test: lsystems tests/run_tests.py
-	LLVM_PROFILE_FILE="build/lsystems.profraw" pytest tests/run_tests.py
+	@LLVM_PROFILE_FILE="build/lsystems.profraw" pytest tests/run_tests.py
+
+profile: test
 	@llvm-profdata merge -output=build/lsystems.profdata build/lsystems.profraw
 	@llvm-cov show build/lsystems -instr-profile=build/lsystems.profdata -format=html -output-dir=build/coverage_report
 	@llvm-cov report build/lsystems -instr-profile=build/lsystems.profdata
@@ -69,7 +71,7 @@ test: lsystems tests/run_tests.py
 lsystems: ${OUT_DIR}/lsystems ${OBJ_SHADER}
 
 run: lsystems examples/default.lsy
-	${OUT_DIR}/lsystems examples/default.lsy
+	@${OUT_DIR}/lsystems examples/default.lsy
 
 ${OUT_DIR}/lsystems: ${OBJ} ${OUT_SHADERS} ${OUT_DIR}/lex.yy.cpp ${OUT_DIR}/parser.tab.o 
 	@echo -e "${COLOR_LINK}[CLANG]${COLOR_RESET} Linking executable ${COLOR_LINK}${COLOR_BOLD}$(@F)${COLOR_RESET}"

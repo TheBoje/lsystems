@@ -32,7 +32,7 @@ jobs:
       run: make clean && make -j4 CXX="ccache clang++" debug
 
     - name: run tests  
-      run: pip install -U pytest pytest-cov && make clean && make -j4 CXX="ccache clang++" test
+      run: pip install -U pytest pytest-cov && make clean && make -j4 CXX="ccache clang++" profile
 
     - name: ccache stats
       run: ccache -s
