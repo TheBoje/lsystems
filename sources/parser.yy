@@ -119,7 +119,6 @@ symbol: SYMBOL { DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval); $$ = new a
 %%
 
 void yyerror(const char * /*message*/ ) {
-    // FIXME(Louis): There is both C and C++ code here, might be easier to use only C++?
     // FIXME(Louis): use message? for now, only supports syntax error. Maybe report semantic errors?
 
     if (has_printed_line_info) {
