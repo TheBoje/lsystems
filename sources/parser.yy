@@ -76,30 +76,25 @@ bool has_printed_line_info = false;
 
 %%
 
-input: config axiom ignore productions {} ;
+input: config axiom ignore productions {}
+     | config axiom productions {} ;
 
 config: derivation angle_factor scale_factor {} ;
 
-derivation: DERIVATION INTEGER SEMICOLON { DEBUG_PRINT("Derivation set to: %d\n", yylval.ival); config->derivation = yylval.ival; }
-    ;
+derivation: DERIVATION INTEGER SEMICOLON { DEBUG_PRINT("Derivation set to: %d\n", yylval.ival); config->derivation = yylval.ival; } ;
 
-angle_factor: ANGLE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Angle factor set to: %f\n", yylval.fval); config->angle_factor = yylval.fval; }
-    ;
+angle_factor: ANGLE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Angle factor set to: %f\n", yylval.fval); config->angle_factor = yylval.fval; } ;
 
-scale_factor: SCALE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Scale factor set to: %f\n", yylval.fval); config->scale_factor = yylval.fval; }
-    ;
+scale_factor: SCALE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Scale factor set to: %f\n", yylval.fval); config->scale_factor = yylval.fval; } ;
 
-axiom: AXIOM SYMBOL SEMICOLON { DEBUG_PRINT("Axiom set to: %s\n", yylval.sval); config->axiom = yylval.sval; }
-    ;
+axiom: AXIOM SYMBOL SEMICOLON { DEBUG_PRINT("Axiom set to: %s\n", yylval.sval); config->axiom = yylval.sval; } ;
 
-ignore: IGNORE SYMBOL SEMICOLON { DEBUG_PRINT("Ignore set to: %s\n", yylval.sval); config->ignore = yylval.sval; }
-    ;
+ignore: IGNORE SYMBOL SEMICOLON { DEBUG_PRINT("Ignore set to: %s\n", yylval.sval); config->ignore = yylval.sval; } ;
 
-productions: PRODUCTIONS production_list END_PRODUCTIONS SEMICOLON { DEBUG_PRINT("Productions parsed.\n"); }
-    ;
+productions: PRODUCTIONS production_list END_PRODUCTIONS SEMICOLON { DEBUG_PRINT("Productions parsed.\n"); } ;
 
 production_list: production { DEBUG_PRINT("Single production added.\n"); }
-    | production production_list { DEBUG_PRINT("Production list extended.\n"); }
+               | production production_list { DEBUG_PRINT("Production list extended.\n"); }
     ;
 
 production: context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol SEMICOLON {
@@ -110,16 +105,15 @@ production: context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol SEM
             ($5 ? $5->context_symbols.c_str() : "null"),
             replacement->result_symbol->symbol.c_str());
         vAst.push_back(new ast::production_node($1, $3, $5, replacement));
-    }
-    ;
+    } ;
 
 context: ANY_TOKEN { DEBUG_PRINT("Context set to null.\n"); $$ = nullptr; }
-    | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context_node(yylval.sval); }
-    | INTEGER { DEBUG_PRINT("Context set to: %d\n", yylval.ival); $$ = new ast::context_node(std::to_string(yylval.ival)); }
+       | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context_node(yylval.sval); }
+       | INTEGER { DEBUG_PRINT("Context set to: %d\n", yylval.ival); $$ = new ast::context_node(std::to_string(yylval.ival)); }
     ;
 
 symbol: SYMBOL { DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval); $$ = new ast::symbol_node(yylval.sval); }
-    | INTEGER { DEBUG_PRINT("Symbol recognized: %d\n", yylval.ival); $$ = new ast::symbol_node(std::to_string(yylval.ival)); }
+      | INTEGER { DEBUG_PRINT("Symbol recognized: %d\n", yylval.ival); $$ = new ast::symbol_node(std::to_string(yylval.ival)); }
     ;
 
 %%
