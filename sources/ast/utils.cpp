@@ -1,6 +1,9 @@
 #include "ast/utils.h"
 
-#include "ast/ast.h"
+#include "ast/tree/context.h"
+#include "ast/tree/production.h"
+#include "ast/tree/replacement.h"
+#include "ast/tree/symbol.h"
 #include "ast/configuration.h"
 
 #include <cassert>
@@ -19,7 +22,7 @@
 
 namespace ast::utils {
 
-std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> vertices_from_lsystem(ast::configuration* config, const std::vector<ast::production_node*> vAst) {
+std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> vertices_from_lsystem(ast::configuration* config, const std::vector<ast::production*> vAst) {
 	if (config->result.empty()) {
 		derive_lsystem(config, vAst);
 	}
@@ -125,7 +128,7 @@ std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> vertices_from_ls
 	return {vertices, indices};
 }
 
-std::string derive_lsystem(ast::configuration* config, const std::vector<ast::production_node*> vAst) {
+std::string derive_lsystem(ast::configuration* config, const std::vector<ast::production*> vAst) {
 	std::string result = config->axiom;
 
 	std::cout << "derivation 0/" << config->derivation << ": " << result << std::endl;
@@ -137,7 +140,7 @@ std::string derive_lsystem(ast::configuration* config, const std::vector<ast::pr
 			const char c = result[i];
 			bool matched = false;
 			for (size_t j = 0; j < vAst.size(); j++) {
-				if (vAst[j]->symbol_node->symbol[0] == c) {
+				if (vAst[j]->symbol_node->symbols[0] == c) {
 					if (has_context(vAst[j]->left_context)) {
 						const std::string left_subset(result.begin() + i - vAst[j]->left_context->context_symbols.size(), result.begin() + i);
 						if (!is_context_match(left_subset, vAst[j]->left_context)) {
@@ -152,7 +155,7 @@ std::string derive_lsystem(ast::configuration* config, const std::vector<ast::pr
 						}
 					}
 
-					std::string replacement = vAst[j]->replacement_node->result_symbol->symbol;
+					std::string replacement = vAst[j]->replacement_node->result_symbol->symbols;
 					if (has_other_same_nodes(vAst, vAst[j])) {
 						replacement = pick_random_replacement(vAst, vAst[j]);
 					}
@@ -176,19 +179,19 @@ std::string derive_lsystem(ast::configuration* config, const std::vector<ast::pr
 	return result;
 }
 
-bool has_context(const context_node* context) {
+bool has_context(const context* context) {
 	if (!context) {
 		return false;
 	}
 	return context->context_symbols != "*";
 }
 
-bool is_context_match(const std::string& current, const ast::context_node* context) {
+bool is_context_match(const std::string& current, const ast::context* context) {
 	assert(context);
 	return current == context->context_symbols;
 }
 
-bool has_other_same_nodes(const std::vector<ast::production_node*> vAst, const ast::production_node* node) {
+bool has_other_same_nodes(const std::vector<ast::production*> vAst, const ast::production* node) {
 	for (const auto* n : vAst) {
 		if (*n == *node) {
 			continue;
@@ -202,7 +205,7 @@ bool has_other_same_nodes(const std::vector<ast::production_node*> vAst, const a
 	return false;
 }
 
-bool is_same_matching_node(const ast::production_node& lhs, const ast::production_node& rhs) {
+bool is_same_matching_node(const ast::production& lhs, const ast::production& rhs) {
 	if ((lhs.left_context == nullptr) != (rhs.left_context == nullptr)) {
 		return false;
 	}
@@ -227,18 +230,18 @@ bool is_same_matching_node(const ast::production_node& lhs, const ast::productio
 	return true;
 }
 
-std::string pick_random_replacement(const std::vector<ast::production_node*> vAst, const ast::production_node* node) {
-	std::vector<const ast::production_node*> nodes;
+std::string pick_random_replacement(const std::vector<ast::production*> vAst, const ast::production* node) {
+	std::vector<const ast::production*> nodes;
 	for (const auto* n : vAst) {
 		if (is_same_matching_node(*node, *n)) {
 			nodes.push_back(n);
 		}
 	}
 
-	std::vector<const ast::production_node*> out;
+	std::vector<const ast::production*> out;
 	std::sample(nodes.begin(), nodes.end(), std::back_inserter(out), 1, std::mt19937 {std::random_device {}()});
 
-	return out[0]->replacement_node->result_symbol->symbol;
+	return out[0]->replacement_node->result_symbol->symbols;
 }
 
 } // namespace ast::utils

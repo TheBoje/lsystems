@@ -7,7 +7,11 @@
 #include <filesystem>
 #include <string.h>
 
-#include "ast/ast.h"
+#include "ast/tree/node.h"
+#include "ast/tree/context.h"
+#include "ast/tree/production.h"
+#include "ast/tree/replacement.h"
+#include "ast/tree/symbol.h"
 #include "ast/configuration.h"
 
 std::vector<ast::node*> vAst;
@@ -35,7 +39,11 @@ bool has_printed_line_info = false;
 %}
 
 %code requires {
-    #include "ast/ast.h"
+    #include "ast/tree/node.h"
+    #include "ast/tree/context.h"
+    #include "ast/tree/production.h"
+    #include "ast/tree/replacement.h"
+    #include "ast/tree/symbol.h"
     #include "ast/configuration.h"
 }
 
@@ -58,7 +66,7 @@ bool has_printed_line_info = false;
 %token INTEGER          "integer"
 %token ANY_TOKEN        "*"
 
-%token <symbol_node> SYMBOL "symbol"
+%token <ast::symbol> SYMBOL "symbol"
 %type  <context_node> context
 %type  <symbol_node> symbol
 %type  <production_node> production
@@ -68,10 +76,9 @@ bool has_printed_line_info = false;
     float fval;
     char* sval;
 
-    ast::context_node *context_node;
-    ast::symbol_node *symbol_node;
-    ast::replacement_node *replacement_node;
-    ast::production_node *production_node;
+    ast::context *context_node;
+    ast::symbol *symbol_node;
+    ast::production *production_node;
 }
 
 %%
@@ -98,22 +105,22 @@ production_list: production { DEBUG_PRINT("Single production added.\n"); }
     ;
 
 production: context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol SEMICOLON {
-        auto* replacement = new ast::replacement_node($7);
+        auto* replacement = new ast::replacement($7);
         DEBUG_PRINT("Production created with left context: %s, symbol: %s, right context: %s, replacement: %s\n",
             ($1 ? $1->context_symbols.c_str() : "null"),
             $3->symbol.c_str(),
             ($5 ? $5->context_symbols.c_str() : "null"),
             replacement->result_symbol->symbol.c_str());
-        vAst.push_back(new ast::production_node($1, $3, $5, replacement));
+        vAst.push_back(new ast::production($1, $3, $5, replacement));
     } ;
 
 context: ANY_TOKEN { DEBUG_PRINT("Context set to null.\n"); $$ = nullptr; }
-       | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context_node(yylval.sval); }
-       | INTEGER { DEBUG_PRINT("Context set to: %d\n", yylval.ival); $$ = new ast::context_node(std::to_string(yylval.ival)); }
+       | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context(yylval.sval); }
+       | INTEGER { DEBUG_PRINT("Context set to: %d\n", yylval.ival); $$ = new ast::context(std::to_string(yylval.ival)); }
     ;
 
-symbol: SYMBOL { DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval); $$ = new ast::symbol_node(yylval.sval); }
-      | INTEGER { DEBUG_PRINT("Symbol recognized: %d\n", yylval.ival); $$ = new ast::symbol_node(std::to_string(yylval.ival)); }
+symbol: SYMBOL { DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval); $$ = new ast::symbol(yylval.sval); }
+      | INTEGER { DEBUG_PRINT("Symbol recognized: %d\n", yylval.ival); $$ = new ast::symbol(std::to_string(yylval.ival)); }
     ;
 
 %%

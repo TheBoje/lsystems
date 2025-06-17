@@ -1,7 +1,7 @@
-#include "ast/ast.h"
 #include "ast/configuration.h"
 #include "ast/utils.h"
 
+#include "ast/tree/production.h"
 #include "utils/macros.h"
 #include "parser.tab.h"
 #include "renderer/vulkan_renderer.h"
@@ -14,7 +14,7 @@
 
 extern int yyparse();
 extern FILE* yyin;
-extern std::vector<ast::production_node*> vAst;
+extern std::vector<ast::production*> vAst;
 extern ast::configuration* config;
 
 const char* current_file_path = nullptr;
