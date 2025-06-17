@@ -6,6 +6,11 @@
 #include <cassert>
 #include <utility>
 #include <stack>
+#include <algorithm>
+#include <iostream>
+#include <iterator>
+#include <random>
+#include <vector>
 
 #include <glm/glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -146,7 +151,13 @@ std::string derive_lsystem(ast::configuration* config, const std::vector<ast::pr
 							continue;
 						}
 					}
-					new_result += vAst[j]->replacement_node->result_symbol->symbol;
+
+					std::string replacement = vAst[j]->replacement_node->result_symbol->symbol;
+					if (has_other_same_nodes(vAst, vAst[j])) {
+						replacement = pick_random_replacement(vAst, vAst[j]);
+					}
+
+					new_result += replacement;
 					matched = true;
 					break;
 				}
@@ -175,6 +186,59 @@ bool has_context(const context_node* context) {
 bool is_context_match(const std::string& current, const ast::context_node* context) {
 	assert(context);
 	return current == context->context_symbols;
+}
+
+bool has_other_same_nodes(const std::vector<ast::production_node*> vAst, const ast::production_node* node) {
+	for (const auto* n : vAst) {
+		if (*n == *node) {
+			continue;
+		}
+
+		if (is_same_matching_node(*node, *n)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool is_same_matching_node(const ast::production_node& lhs, const ast::production_node& rhs) {
+	if ((lhs.left_context == nullptr) != (rhs.left_context == nullptr)) {
+		return false;
+	}
+	if (lhs.left_context != nullptr && *lhs.left_context != *rhs.left_context) {
+		return false;
+	}
+
+	if ((lhs.right_context == nullptr) != (rhs.right_context == nullptr)) {
+		return false;
+	}
+	if (lhs.right_context != nullptr && *lhs.right_context != *rhs.right_context) {
+		return false;
+	}
+
+	if ((lhs.symbol_node == nullptr) != (rhs.symbol_node == nullptr)) {
+		return false;
+	}
+	if (lhs.symbol_node != nullptr && *lhs.symbol_node != *rhs.symbol_node) {
+		return false;
+	}
+
+	return true;
+}
+
+std::string pick_random_replacement(const std::vector<ast::production_node*> vAst, const ast::production_node* node) {
+	std::vector<const ast::production_node*> nodes;
+	for (const auto* n : vAst) {
+		if (is_same_matching_node(*node, *n)) {
+			nodes.push_back(n);
+		}
+	}
+
+	std::vector<const ast::production_node*> out;
+	std::sample(nodes.begin(), nodes.end(), std::back_inserter(out), 1, std::mt19937 {std::random_device {}()});
+
+	return out[0]->replacement_node->result_symbol->symbol;
 }
 
 } // namespace ast::utils

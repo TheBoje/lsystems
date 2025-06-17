@@ -26,6 +26,13 @@ public:
 		stream << context_symbols;
 	}
 
+	bool operator==(const context_node& other) const {
+		return context_symbols == other.context_symbols;
+	}
+	bool operator!=(const context_node& other) const {
+		return !(*this == other);
+	}
+
 public:
 	std::string context_symbols;
 };
@@ -39,6 +46,13 @@ public:
 		stream << symbol;
 	}
 
+	bool operator==(const symbol_node& other) const {
+		return symbol == other.symbol;
+	}
+	bool operator!=(const symbol_node& other) const {
+		return !(*this == other);
+	}
+
 public:
 	std::string symbol;
 };
@@ -50,6 +64,13 @@ public:
 
 	void print(std::ostream& stream) const override {
 		stream << *result_symbol;
+	}
+
+	bool operator==(const replacement_node& other) const {
+		return result_symbol == other.result_symbol;
+	}
+	bool operator!=(const replacement_node& other) const {
+		return !(*this == other);
 	}
 
 public:
@@ -78,6 +99,12 @@ public:
 			stream << "*";
 
 		stream << " --> " << *replacement_node;
+	}
+	bool operator==(const production_node& other) const {
+		return left_context == other.left_context && right_context == other.right_context && symbol_node == other.symbol_node && replacement_node == other.replacement_node;
+	}
+	bool operator!=(const production_node& other) const {
+		return !(*this == other);
 	}
 
 public:

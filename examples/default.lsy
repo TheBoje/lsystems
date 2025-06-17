@@ -1,23 +1,29 @@
 DERIVATION: 3;
-ANGLE_FACTOR: 126.01;
-SCALE_FACTOR: 100.0;
+ANGLE_FACTOR: 45.0;
+SCALE_FACTOR: 0.01;
+AXIOM:F;
 
-# Starting point
-AXIOM:FBFBFB;
+# definitions of constants? or #define?
+# preprocessor replace?
 
-# Ignore some productions while context matching
-IGNORE:PMF;
-
-# Production with a context
 PRODUCTIONS:
-    A < B > M --> A;
-    A < A > B --> BLMFBFBR;
-    A < B > A --> B;
-    A < B > B --> B;
-    B < A > A --> A;
-    B < A > B --> BFB;
-    B < B > A --> B;
-    B < B > B --> FA;
-    * < P > * --> M;
-    * < M > * --> P;
+# after
+    predecessor        : condition      --> successor                  ;
+    A(t)               : t > 5          --> B(t + 1)CD(t ^ 0.5, t - 2) ;
+    A(x) < B(y) > C(z) : x + y + z > 10 --> E((x + y) / 2)F((y + z)/2) ;
+
+# A -> A(x, y, ...)
+# + != +(value)   ->   operator != draw function
+#
+# draw functions: F(x), f(x), +(x), &(x), /(x)
+# arithmetic operators    : +, -, *, /
+# exponentiation operator : ^
+# relationnal operators   : <, <=, >, >=, =
+# logical operators       : !, &, | 
+# other                   : (, )
+
+# before
+    predecessor --> successor ;
+    A < B > C   --> D         ;
+
 END_PRODUCTIONS;

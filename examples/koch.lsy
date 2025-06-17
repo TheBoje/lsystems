@@ -11,5 +11,5 @@ IGNORE:B;
 
 # Production with a context
 PRODUCTIONS:
-    * < F > * --> FPFMMFPF;
+    * < F > * --> F+F--F+F;
 END_PRODUCTIONS;
