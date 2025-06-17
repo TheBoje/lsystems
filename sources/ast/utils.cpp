@@ -2,16 +2,128 @@
 
 #include "ast/ast.h"
 #include "ast/configuration.h"
-#include <algorithm>
+
 #include <cassert>
-#include <cstddef>
+#include <utility>
+#include <stack>
+
+#include <glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/trigonometric.hpp>
 
 namespace ast::utils {
 
-std::string derive_lsystem(const ast::configuration* config, const std::vector<ast::production_node*> vAst) {
+std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> vertices_from_lsystem(ast::configuration* config, const std::vector<ast::production_node*> vAst) {
+	if (config->result.empty()) {
+		derive_lsystem(config, vAst);
+	}
+
+	assert(config->result.empty() == false);
+
+	struct State {
+		glm::vec3 pos;
+		glm::vec3 dir_forward;
+		glm::vec3 dir_left;
+		glm::vec3 dir_up;
+		uint32_t index;
+	};
+
+	std::vector<renderer::vertex> vertices;
+	std::vector<uint32_t> indices;
+	const auto angle = glm::radians(config->angle_factor);
+
+	State state;
+	state.pos = {0.0f, 0.0f, -1.0f};
+	state.dir_forward = {0.0f, 0.0f, 1.0f};
+	state.dir_left = {1.0f, 0.0f, 0.0f};
+	state.dir_up = {0.0f, 1.0f, 0.0f};
+	state.index = 0;
+
+	std::stack<State> stack;
+
+	const glm::vec3 color = {1.0f, 1.0f, 1.0f};
+	vertices.push_back({state.pos, color});
+
+	for (const char current_char : config->result) {
+		switch (current_char) {
+			case 'F': {
+				glm::vec3 next = state.pos + state.dir_forward * config->scale_factor;
+
+				vertices.push_back({next, color});
+				uint32_t newIndex = vertices.size() - 1;
+
+				indices.push_back(state.index);
+				indices.push_back(newIndex);
+
+				state.index = newIndex;
+				state.pos = next;
+
+				break;
+			}
+			case '+': { // yaw left
+				state.dir_forward = glm::rotate(state.dir_forward, angle, state.dir_up);
+				state.dir_left = glm::rotate(state.dir_left, angle, state.dir_up);
+				break;
+			}
+			case '-': { // yaw right
+				state.dir_forward = glm::rotate(state.dir_forward, -angle, state.dir_up);
+				state.dir_left = glm::rotate(state.dir_left, -angle, state.dir_up);
+				break;
+			}
+			case '&': { // pitch down
+				state.dir_forward = glm::rotate(state.dir_forward, angle, state.dir_left);
+				state.dir_up = glm::rotate(state.dir_up, angle, state.dir_left);
+				break;
+			}
+			case '^': { // pitch up
+				state.dir_forward = glm::rotate(state.dir_forward, -angle, state.dir_left);
+				state.dir_up = glm::rotate(state.dir_up, -angle, state.dir_left);
+				break;
+			}
+			case '\\': { // roll left
+				state.dir_left = glm::rotate(state.dir_left, angle, state.dir_forward);
+				state.dir_up = glm::rotate(state.dir_up, angle, state.dir_forward);
+				break;
+			}
+			case '/': { // roll right
+				state.dir_left = glm::rotate(state.dir_left, -angle, state.dir_forward);
+				state.dir_up = glm::rotate(state.dir_up, -angle, state.dir_forward);
+				break;
+			}
+			case '|': { // reverse
+				state.dir_forward = -state.dir_forward;
+				state.dir_left = -state.dir_left;
+				// No -up ?
+				break;
+			}
+			case '[': {
+				stack.push(state);
+				break;
+			}
+			case ']': {
+				state = stack.top();
+				stack.pop();
+
+				vertices.push_back({state.pos, color});
+				state.index = vertices.size() - 1;
+
+				break;
+			}
+			default: {
+				// nothing!
+				break;
+			}
+		}
+	}
+
+	return {vertices, indices};
+}
+
+std::string derive_lsystem(ast::configuration* config, const std::vector<ast::production_node*> vAst) {
 	std::string result = config->axiom;
 
-    std::cout << "derivation 0/" << config->derivation << ": " << result << std::endl;
+	std::cout << "derivation 0/" << config->derivation << ": " << result << std::endl;
 
 	for (int step = 0; step < config->derivation; ++step) {
 		std::string new_result = "";
@@ -45,8 +157,10 @@ std::string derive_lsystem(const ast::configuration* config, const std::vector<a
 		}
 
 		result = new_result;
-        std::cout << "derivation " << (step + 1) << "/" << config->derivation << ": " << result << std::endl;
+		std::cout << "derivation " << (step + 1) << "/" << config->derivation << ": " << result << std::endl;
 	}
+
+	config->result = result;
 
 	return result;
 }

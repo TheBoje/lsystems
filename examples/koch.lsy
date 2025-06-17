@@ -1,7 +1,7 @@
 # Koch snowflake
-DERIVATION: 1;
+DERIVATION: 2;
 ANGLE_FACTOR: 60.0;
-SCALE_FACTOR: 1.0;
+SCALE_FACTOR: 0.2;
 
 # Starting point
 AXIOM:F;
@@ -11,5 +11,5 @@ IGNORE:B;
 
 # Production with a context
 PRODUCTIONS:
-    * < F > * --> FPFMMFPFM;
+    * < F > * --> FPFMMFPF;
 END_PRODUCTIONS;

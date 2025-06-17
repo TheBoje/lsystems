@@ -29,7 +29,7 @@ offset_t offset = 0;
 %option yylineno
 %option noinput nounput
 
-SYMBOL  [A-Za-z0-9]*
+SYMBOL  [A-Za-z0-9\[\]\&\^\\\/\|\+\-]*
 
 %%
 

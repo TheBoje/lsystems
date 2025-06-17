@@ -23,7 +23,8 @@ public:
 	float angle_factor = 1.;
 	float scale_factor = 1.;
 	std::string axiom;
-	std::string ignore;
+	std::string ignore; // optionnal
+	std::string result;
 };
 
 } // namespace ast

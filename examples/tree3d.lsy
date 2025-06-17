@@ -1,0 +1,9 @@
+DERIVATION: 5;
+ANGLE_FACTOR: 30.0;
+SCALE_FACTOR: 0.05;
+AXIOM:X;
+
+PRODUCTIONS:
+    * < X > * --> F[\&-X][/^+X][&X][^X]FX;
+    * < F > * --> FF;
+END_PRODUCTIONS;

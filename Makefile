@@ -23,9 +23,12 @@ BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamp
 
 ifeq ($(MAKECMDGOALS), profile)
   CXXFLAGS   += -fprofile-arcs -ftest-coverage -g -fprofile-instr-generate -fcoverage-mapping
+  CXXFLAGS   += -DTEST
   CXXLINKING += -lgcov
-#else
-#  CXXFLAGS   += -DENABLE_UI
+endif
+
+ifeq ($(MAKECMDGOALS), test)
+  CXXFLAGS +=-O3 -DTEST
 endif
 
 ifeq ($(MAKECMDGOALS), release)

@@ -3,18 +3,16 @@
 #include "imgui_impl_glfw.h"
 
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <optional>
 #include <array>
-#include <queue>
 #include <vector>
 #include <string>
 
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/hash.hpp>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
@@ -46,40 +44,19 @@ struct SwapChainSupportDetails {
 struct vertex {
 	glm::vec3 pos;
 	glm::vec3 color;
-	glm::vec2 texCoord;
 
 	static VkVertexInputBindingDescription getBindingDescription() {
-		VkVertexInputBindingDescription bindingDescription {};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		VkVertexInputBindingDescription bindingDescription {.binding = 0, .stride = sizeof(vertex), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
 
 		return bindingDescription;
 	}
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions {};
 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions {};
-
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(vertex, pos);
-
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(vertex, color);
-
-		attributeDescriptions[2].binding = 0;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(vertex, texCoord);
+		attributeDescriptions[0] = {.location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(vertex, pos)};
+		attributeDescriptions[1] = {.location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(vertex, pos)};
 
 		return attributeDescriptions;
-	}
-
-	bool operator==(const vertex& other) const {
-		return pos == other.pos && color == other.color && texCoord == other.texCoord;
 	}
 };
 
@@ -97,6 +74,10 @@ public:
 	}
 	bool _bFrameBufferResized = false;
 
+	void setVertices(std::vector<vertex> vert, std::vector<uint32_t> ind) {
+		_vertices = vert;
+		_indices = ind;
+	}
 	void run();
 	~renderer();
 
@@ -124,8 +105,6 @@ private:
 	bool createTextureImage();
 	bool createTextureImageView();
 	bool createTextureSampler();
-	bool createColorResources();
-	bool loadModel(const std::string& pathToObj);
 	bool createVertexBuffer();
 	bool createIndexBuffer();
 	bool createUniformBuffers();
@@ -133,17 +112,13 @@ private:
 	bool createDescriptorSets();
 	bool createCommandBuffers();
 	bool createSyncObjects();
-
-	// Imgui
 	bool initImgui();
-	void drawImgui();
 
 	// runtime updates
 	bool cleanupSwapChain();
 	bool recreateSwapChain();
 	bool updateUniformBuffer(uint32_t frame);
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) const;
-	void generateMipmaps(VkImage image, VkFormat format, int32_t textureWidth, int32_t textureHeight, uint32_t mipLevels) const;
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 
 	// helpers
 	bool checkValidationLayerSupport();
@@ -157,22 +132,13 @@ private:
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) const;
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
-	void createImage(uint32_t width,
-		uint32_t height,
-		uint32_t mipLevels,
-		VkSampleCountFlagBits numSamples,
-		VkFormat format,
-		VkImageTiling tiling,
-		VkImageUsageFlags usage,
-		VkMemoryPropertyFlags properties,
-		VkImage& image,
-		VkDeviceMemory& imageMemory) const;
+	void createImage(
+		uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) const;
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
-	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) const;
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 	VkFormat findDepthFormat() const;
 	bool hasStencilComponent(VkFormat format) const;
-	VkSampleCountFlagBits getMaxUsableSampleCount() const;
 
 	// helpers swap chain
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
@@ -192,7 +158,6 @@ private:
 private:
 	GLFWwindow* _window = nullptr;
 	bool _bKeepAlive = true;
-	bool _bLimitFps = false;
 	uint32_t _currentFrame = 0;
 
 	VkInstance _instance;
@@ -227,9 +192,10 @@ private:
 	std::vector<VkSemaphore> _renderFinishedSemaphore;
 	std::vector<VkFence> _inFlightFence;
 
-	// vertex and index
 	std::vector<vertex> _vertices;
 	std::vector<uint32_t> _indices;
+
+	// TEMP
 	VkBuffer _vertexBuffer, _indexBuffer;
 	VkDeviceMemory _vertexBufferMemory, _indexBufferMemory;
 
@@ -238,17 +204,10 @@ private:
 	std::vector<void*> _uniformBuffersMapped;
 
 	// Texture
-	uint32_t _mipLevels;
 	VkImage _textureImage;
 	VkDeviceMemory _textureImageMemory;
 	VkImageView _textureImageView;
 	VkSampler _textureSampler;
-
-	// Msaa
-	VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
-	VkImage colorImage;
-	VkDeviceMemory colorImageMemory;
-	VkImageView colorImageView;
 
 	// Depth
 	VkImage _depthImage;
@@ -262,39 +221,4 @@ private:
 	VkFramebuffer _imguiFrameBuffer;
 };
 
-// TODO: Move me!
-struct ScrollingBuffer {
-	int MaxSize;
-	int Offset;
-	ImVector<ImVec2> Data;
-	ScrollingBuffer(int max_size = 2000) {
-		MaxSize = max_size;
-		Offset = 0;
-		Data.reserve(MaxSize);
-	}
-	void AddPoint(float x, float y) {
-		if (Data.size() < MaxSize)
-			Data.push_back(ImVec2(x, y));
-		else {
-			Data[Offset] = ImVec2(x, y);
-			Offset = (Offset + 1) % MaxSize;
-		}
-	}
-	void Erase() {
-		if (Data.size() > 0) {
-			Data.shrink(0);
-			Offset = 0;
-		}
-	}
-};
-
 } // namespace renderer
-
-namespace std {
-template <>
-struct hash<renderer::vertex> {
-	size_t operator()(renderer::vertex const& vertex) const {
-		return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.texCoord) << 1);
-	}
-};
-} // namespace std

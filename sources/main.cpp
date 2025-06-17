@@ -19,13 +19,16 @@ extern ast::configuration* config;
 
 const char* current_file_path = nullptr;
 
-//#define ENABLE_UI
+#define ENABLE_UI
+#ifdef TEST
+	#undef ENABLE_UI
+#endif
 
 int main(int argc, char* argv[]) {
 	if (argc >= 2) {
 		current_file_path = argv[1];
 	} else {
-		current_file_path = "tests/failure/missing/semicolon_0.lsy";
+		current_file_path = "examples/tree3d.lsy";
 	}
 
 	FILE* file = fopen(current_file_path, "r");
@@ -53,6 +56,10 @@ int main(int argc, char* argv[]) {
 	std::cout << ast::utils::derive_lsystem(config, vAst) << std::endl;
 
 #ifdef ENABLE_UI
+
+	const auto& [vertices, indices] = ast::utils::vertices_from_lsystem(config, vAst);
+
+	renderer::renderer::get()->setVertices(vertices, indices);
 
 	try {
 		renderer::renderer::get()->run();
