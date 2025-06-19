@@ -1,5 +1,4 @@
 #include "ast/tree/comparator.h"
-#include "macros.h"
 
 namespace ast {
 

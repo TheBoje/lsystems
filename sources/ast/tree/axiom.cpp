@@ -1,5 +1,4 @@
 #include "ast/tree/axiom.h"
-#include "macros.h"
 
 namespace ast {
 
