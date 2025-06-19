@@ -5,17 +5,27 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
-#include <string.h>
+#include <string>
+#include <vector>
 
+#include "ast/tree/axiom.h"
+#include "ast/tree/comparator.h"
+#include "ast/tree/condition.h"
+#include "ast/tree/definition.h"
+#include "ast/tree/definitions.h"
+#include "ast/tree/expression.h"
+#include "ast/tree/identifier.h"
 #include "ast/tree/node.h"
-#include "ast/tree/context.h"
+#include "ast/tree/node_list.h"
+#include "ast/tree/numerical.h"
+#include "ast/tree/predecessor.h"
 #include "ast/tree/production.h"
-#include "ast/tree/replacement.h"
+#include "ast/tree/productions.h"
+#include "ast/tree/root.h"
+#include "ast/tree/successor.h"
 #include "ast/tree/symbol.h"
-#include "ast/configuration.h"
 
-std::vector<ast::node*> vAst;
-ast::configuration* config = new ast::configuration();
+ast::node* Ast;
 
 #include "locations.h"
 
@@ -40,88 +50,133 @@ bool has_printed_line_info = false;
 
 %code requires {
     #include "ast/tree/node.h"
-    #include "ast/tree/context.h"
-    #include "ast/tree/production.h"
-    #include "ast/tree/replacement.h"
-    #include "ast/tree/symbol.h"
-    #include "ast/configuration.h"
+    #include "ast/tree/node_list.h"
+
+    #include <string>
+    #include <vector>
 }
 
 %locations
 %define parse.error custom
-%start input
 
-%token DERIVATION       "DERIVATION:"
-%token ANGLE_FACTOR     "ANGLE_FACTOR:"
-%token SCALE_FACTOR     "SCALE_FACTOR:"
-%token AXIOM            "AXIOM:"
-%token IGNORE           "IGNORE:"
-%token PRODUCTIONS      "PRODUCTIONS:"
+%token AXIOM            "AXIOM"
+%token IGNORE           "IGNORE"
+%token PRODUCTIONS      "PRODUCTIONS"
 %token END_PRODUCTIONS  "END_PRODUCTIONS"
-%token CONTEXT_LEFT     "<"
-%token CONTEXT_RIGHT    ">"
+%token DEFINITIONS      "DEFINITIONS"
+%token END_DEFINITIONS  "END_DEFINITIONS"
+%token OP_LT            "<"
+%token OP_LTE           "<="
+%token OP_GT            ">"
+%token OP_GTE           ">="
+%token OP_EQ            "=="
+%token OP_NEQ           "!="
+%token OP_PLUS          "+"
+%token OP_MINUS         "-"
+%token OP_MULT          "*"
+%token OP_DIVIDE        "/"
+%token OP_EXPONENT      "^"
+%token OP_NOT           "!"
+%token OP_AND           "&"
+%token OP_OR            "|"
+%token PAR_OPEN         "(" 
+%token PAR_CLOSE        ")"
 %token IMPLIES          "-->"
 %token SEMICOLON        ";"
-%token FLOAT            "float"
-%token INTEGER          "integer"
-%token ANY_TOKEN        "*"
+%token COLON            ":"
+%token COMMA            ","
+%token <ival> FLOAT     "float"
+%token <fval> INTEGER   "integer"
+%token <sval> IDENTIFIER "identifier"
 
-%token <ast::symbol> SYMBOL "symbol"
-%type  <context_node> context
-%type  <symbol_node> symbol
-%type  <production_node> production
+%left OP_PLUS OP_MINUS
+%left OP_MULT OP_DIVIDE
+%right OP_EXPONENT
+
+%type <node> comparator expression condition_opt primary symbol successor predecessor production production_section definition definitions axiom input
+%type <node_list> arg_list symbol_list production_list definition_list
 
 %union {
     int ival;
     float fval;
     char* sval;
 
-    ast::context *context_node;
-    ast::symbol *symbol_node;
-    ast::production *production_node;
+    ast::node* node;
+    ast::node_list* node_list;
 }
+
+%start input
 
 %%
 
-input: config axiom ignore productions {}
-     | config axiom productions {} ;
+input: axiom definitions production_section { $$ = new ast::root($1, $2, $3); Ast = $$; };
 
-config: derivation angle_factor scale_factor {} ;
+axiom: AXIOM COLON symbol_list SEMICOLON { $$ = new ast::axiom($3); };
 
-derivation: DERIVATION INTEGER SEMICOLON { DEBUG_PRINT("Derivation set to: %d\n", yylval.ival); config->derivation = yylval.ival; } ;
+definitions: /* empty */ { $$ = nullptr; }
+           | DEFINITIONS COLON definition_list END_DEFINITIONS SEMICOLON { $$ = new ast::definitions($3); }
 
-angle_factor: ANGLE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Angle factor set to: %f\n", yylval.fval); config->angle_factor = yylval.fval; } ;
+definition_list: definition { $$ = new ast::definition_list( { $1 } ); }
+                | definition_list definition { $1->push_back($2); $$ = $1; }
+;
 
-scale_factor: SCALE_FACTOR FLOAT SEMICOLON { DEBUG_PRINT("Scale factor set to: %f\n", yylval.fval); config->scale_factor = yylval.fval; } ;
+definition: IDENTIFIER IMPLIES expression SEMICOLON { $$ = new ast::definition(new ast::identifier($1), $3); };
 
-axiom: AXIOM SYMBOL SEMICOLON { DEBUG_PRINT("Axiom set to: %s\n", yylval.sval); config->axiom = yylval.sval; } ;
+production_section: PRODUCTIONS COLON production_list END_PRODUCTIONS SEMICOLON { $$ = new ast::productions($3); };
 
-ignore: IGNORE SYMBOL SEMICOLON { DEBUG_PRINT("Ignore set to: %s\n", yylval.sval); config->ignore = yylval.sval; } ;
+production_list: production { $$ = new ast::node_list( { $1 } );}
+               | production_list production { $1->push_back($2); $$ = $1; }
+;
 
-productions: PRODUCTIONS production_list END_PRODUCTIONS SEMICOLON { DEBUG_PRINT("Productions parsed.\n"); } ;
+production: predecessor COLON condition_opt IMPLIES successor SEMICOLON { $$ = new ast::production($1, $5, $3); };
 
-production_list: production { DEBUG_PRINT("Single production added.\n"); }
-               | production production_list { DEBUG_PRINT("Production list extended.\n"); }
-    ;
+predecessor:                   symbol_list                   { $$ = new ast::predecessor($1); }
+           |                   symbol_list OP_GT symbol_list { $$ = new ast::predecessor($1, nullptr, $3); }
+           | symbol_list OP_LT symbol_list                   { $$ = new ast::predecessor($3, $1); }
+           | symbol_list OP_LT symbol_list OP_GT symbol_list { $$ = new ast::predecessor($3, $1, $5); }
+;
 
-production: context CONTEXT_LEFT symbol CONTEXT_RIGHT context IMPLIES symbol SEMICOLON {
-        auto* replacement = new ast::replacement($7);
-        DEBUG_PRINT("Production created with left context: %s, symbol: %s, right context: %s, replacement: %s\n",
-            ($1 ? $1->context_symbols.c_str() : "null"),
-            $3->symbol.c_str(),
-            ($5 ? $5->context_symbols.c_str() : "null"),
-            replacement->result_symbol->symbol.c_str());
-        vAst.push_back(new ast::production($1, $3, $5, replacement));
-    } ;
+/* node: can only do a == b for now, maybe expand for more complex conditions */
+condition_opt: /* empty */ { $$ = nullptr; }
+             | expression comparator expression { $$ = new ast::condition($1, $3, $2); }
+;
 
-context: ANY_TOKEN { DEBUG_PRINT("Context set to null.\n"); $$ = nullptr; }
-       | SYMBOL { DEBUG_PRINT("Context set to: %s\n", yylval.sval); $$ = new ast::context(yylval.sval); }
-       | INTEGER { DEBUG_PRINT("Context set to: %d\n", yylval.ival); $$ = new ast::context(std::to_string(yylval.ival)); }
-    ;
+successor: symbol_list { $$ = new ast::successor($1); };
 
-symbol: SYMBOL { DEBUG_PRINT("Symbol recognized: %s\n", yylval.sval); $$ = new ast::symbol(yylval.sval); }
-      | INTEGER { DEBUG_PRINT("Symbol recognized: %d\n", yylval.ival); $$ = new ast::symbol(std::to_string(yylval.ival)); }
-    ;
+symbol_list: symbol { $$ = new ast::node_list( { $1 } ); }
+                    | symbol_list symbol { $1->push_back($2); $$ = $1; }
+;
+
+symbol: IDENTIFIER { $$ = new ast::symbol(new ast::identifier($1)); }
+               | IDENTIFIER PAR_OPEN arg_list PAR_CLOSE { $$ = new ast::symbol(new ast::identifier($1), $3); }
+;
+
+arg_list: expression { $$ = new ast::arg_list( { $1 } ); }
+        | arg_list COMMA expression { $1->push_back($3); $$ = $1; }
+;
+
+/* standard arithmetic and boolean operators */
+expression: expression OP_PLUS     expression { $$ = new ast::expression($1, $3, ast::operator_type::PLUS);     }
+          | expression OP_MINUS    expression { $$ = new ast::expression($1, $3, ast::operator_type::MINUS);    }
+          | expression OP_MULT     expression { $$ = new ast::expression($1, $3, ast::operator_type::MULT);     }
+          | expression OP_DIVIDE   expression { $$ = new ast::expression($1, $3, ast::operator_type::DIVIDE);   }
+          | expression OP_EXPONENT expression { $$ = new ast::expression($1, $3, ast::operator_type::EXPONENT); }
+          | PAR_OPEN   expression  PAR_CLOSE  { $$ = $2; }
+          | primary                           { $$ = $1; }
+          ;
+
+primary: INTEGER    { $$ = new ast::numerical<int>(yylval.ival);   }
+       | FLOAT      { $$ = new ast::numerical<float>(yylval.fval); }
+       | IDENTIFIER { $$ = new ast::identifier(yylval.sval);       }
+;
+
+comparator: OP_LT  { $$ = new ast::comparator(ast::comparator_type::LT);  }
+          | OP_LTE { $$ = new ast::comparator(ast::comparator_type::LTE); }
+          | OP_GT  { $$ = new ast::comparator(ast::comparator_type::GT);  }
+          | OP_GTE { $$ = new ast::comparator(ast::comparator_type::GTE); }
+          | OP_EQ  { $$ = new ast::comparator(ast::comparator_type::EQ);  }
+          | OP_NEQ { $$ = new ast::comparator(ast::comparator_type::NEQ); }
+;
 
 %%
 

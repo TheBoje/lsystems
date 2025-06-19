@@ -1,7 +1,5 @@
-#include "ast/configuration.h"
 #include "ast/utils.h"
 
-#include "ast/tree/production.h"
 #include "utils/macros.h"
 #include "parser.tab.h"
 #include "renderer/vulkan_renderer.h"
@@ -14,12 +12,11 @@
 
 extern int yyparse();
 extern FILE* yyin;
-extern std::vector<ast::production*> vAst;
-extern ast::configuration* config;
+extern ast::node* Ast;
 
 const char* current_file_path = nullptr;
 
-#define ENABLE_UI
+//#define ENABLE_UI
 #ifdef TEST
 	#undef ENABLE_UI
 #endif
@@ -44,16 +41,14 @@ int main(int argc, char* argv[]) {
 		return res;
 	}
 
-	if (vAst.size() <= 0) {
+	if (Ast) {
+		std::cout << *Ast << std::endl;
+	} else {
 		std::cout << "nodes: none" << std::endl;
 	}
 
-	for (ast::node* node : vAst) {
-		std::cout << "node: " << *node << std::endl;
-	}
-
-	std::cout << "config: " << std::endl << *config << std::endl;
-	std::cout << ast::utils::derive_lsystem(config, vAst) << std::endl;
+	// std::cout << "config: " << std::endl << *config << std::endl;
+	//std::cout << ast::utils::derive_lsystem(config, vAst) << std::endl;
 
 #ifdef ENABLE_UI
 

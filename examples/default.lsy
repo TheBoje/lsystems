@@ -1,29 +1,56 @@
-DERIVATION: 3;
-ANGLE_FACTOR: 45.0;
-SCALE_FACTOR: 0.01;
-AXIOM:F;
+#DERIVATION: 3;
+#ANGLE_FACTOR: 86.0;
+#SCALE_FACTOR: 0.01;
 
 # definitions of constants? or #define?
 # preprocessor replace?
+# axiom becomes a Func(literal, literal, ...)Func2(literal, literal, ...)
+
+AXIOM:F(1);
+DEFINITIONS:
+    # derivation = d
+    # angle factor = a
+    # scale factor = s
+    a --> 86.0;
+    s --> 0.1;
+    d --> 5;
+
+    c --> 1;
+    p --> 0.3;
+    q --> c - p;
+    h --> (p * q) ^ 0.5;
+END_DEFINITIONS;
 
 PRODUCTIONS:
-# after
-    predecessor        : condition      --> successor                  ;
-    A(t)               : t > 5          --> B(t + 1)CD(t ^ 0.5, t - 2) ;
-    A(x) < B(y) > C(z) : x + y + z > 10 --> E((x + y) / 2)F((y + z)/2) ;
+# row of trees
+    F(x)    :            -->     F(x * p) P(a) F(x * h) M(a) M(a) F(x * h) P(a) F(x * q);
 
+END_PRODUCTIONS;
+
+# after
+#    predecessor        : condition      --> successor                  ;
+#    A(t)               : t > 5          --> B(t + 1)CD(t ^ 0.5, t - 2) ;
+#    A(x) < B(y) > C(z) : x + y + z > 10 --> E((x + y) / 2)F((y + z)/2) ;
+#
 # A -> A(x, y, ...)
 # + != +(value)   ->   operator != draw function
 #
 # draw functions: F(x), f(x), +(x), &(x), /(x)
 # arithmetic operators    : +, -, *, /
 # exponentiation operator : ^
-# relationnal operators   : <, <=, >, >=, =
+# relationnal operators   : <, <=, >, >=, =, !=
 # logical operators       : !, &, | 
 # other                   : (, )
-
+#
 # before
-    predecessor --> successor ;
-    A < B > C   --> D         ;
+#    predecessor --> successor ;
+#    A < B > C   --> D         ;
+#
+# example wihtout draw functions:
+# AXIOM:B(2)A(4, 4);
+#    A(x, y) :   y <= 3  -->     A(x * 2, x + y) ;
+#    A(x, y) :   y  > 3  -->     B(x)A(x/y, 0)   ;
+#    B(x)    :   x  < 1  -->     C               ;
+#    B(x)    :   x >= 1  -->     B(x - 1)        ;
 
-END_PRODUCTIONS;
+

@@ -1,19 +1,18 @@
 #pragma once
 
 #include "ast/tree/node.h"
-#include "ast/tree/arg_list.h"
 #include "ast/tree/identifier.h"
+#include "ast/tree/expression.h"
 
 namespace ast {
 
-class symbol : public node {
+class definition : public node {
 public:
-	symbol(node* id, node_list* args = nullptr);
+	definition(node* id, node* expression);
 	void print(std::ostream& stream) const override;
 
 public:
 	identifier* _identifier = nullptr;
-	arg_list* _args = nullptr;
+	expression* _expression = nullptr;
 };
-
 } // namespace ast

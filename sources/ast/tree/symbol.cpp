@@ -2,18 +2,15 @@
 
 namespace ast {
 
-symbol::symbol(const std::string& symbol)
-	: symbols(symbol) { }
+symbol::symbol(node* id, node_list* args)
+	: _identifier(static_cast<ast::identifier*>(id))
+	, _args(static_cast<ast::arg_list*>(args)) { }
 
 void symbol::print(std::ostream& stream) const {
-	stream << symbols;
-}
-
-bool symbol::operator==(const symbol& other) const {
-	return symbols == other.symbols;
-}
-bool symbol::operator!=(const symbol& other) const {
-	return !(*this == other);
+	stream << *_identifier;
+	if (_args) {
+		stream << "(" << *_args << ")";
+	}
 }
 
 } // namespace ast

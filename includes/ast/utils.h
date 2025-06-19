@@ -1,5 +1,5 @@
 #pragma once
-
+/*
 #include "renderer/vulkan_renderer.h"
 
 #include <string>
@@ -27,3 +27,4 @@ bool is_same_matching_node(const ast::production& lhs, const ast::production& rh
 std::string pick_random_replacement(const std::vector<ast::production*> vAst, const ast::production* node);
 
 } // namespace ast::utils
+*/

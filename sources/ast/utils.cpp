@@ -1,5 +1,5 @@
 #include "ast/utils.h"
-
+/*
 #include "ast/tree/context.h"
 #include "ast/tree/production.h"
 #include "ast/tree/replacement.h"
@@ -23,6 +23,7 @@
 namespace ast::utils {
 
 std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> vertices_from_lsystem(ast::configuration* config, const std::vector<ast::production*> vAst) {
+
 	if (config->result.empty()) {
 		derive_lsystem(config, vAst);
 	}
@@ -245,3 +246,4 @@ std::string pick_random_replacement(const std::vector<ast::production*> vAst, co
 }
 
 } // namespace ast::utils
+*/
