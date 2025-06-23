@@ -7,6 +7,13 @@ namespace ast {
 class definitions : public node {
 public:
 	definitions(node_list* definition_list);
+	definitions(definitions&& other);
+	definitions(const definitions& other);
+	virtual ~definitions() override;
+	virtual definitions& operator=(definitions&& rhs);
+	virtual definitions& operator=(const definitions& rhs);
+	virtual definitions* clone() const override;
+
 	void print(std::ostream& stream) const override;
 
 public:

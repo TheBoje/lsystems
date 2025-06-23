@@ -6,14 +6,14 @@
 # preprocessor replace?
 # axiom becomes a Func(literal, literal, ...)Func2(literal, literal, ...)
 
-AXIOM:F(1);
+AXIOM:F(10);
 DEFINITIONS:
     # derivation = d
     # angle factor = a
     # scale factor = s
-    a --> 86.0;
-    s --> 0.1;
-    d --> 5;
+    a --> 60.0;
+    s --> 0.9;
+    d --> 2;
 
     c --> 1;
     p --> 0.3;
@@ -23,7 +23,11 @@ END_DEFINITIONS;
 
 PRODUCTIONS:
 # row of trees
-    F(x)    :            -->     F(x * p) P(a) F(x * h) M(a) M(a) F(x * h) P(a) F(x * q);
+   # F(x)    :            -->     F(x * p) P(a) F(x * h) M(a) M(a) F(x * h) P(a) F(x * q);
+    #F(x): --> F(x) P(a) F(x * p) M(a) M(a) F(x) P(a) F(x);
+    #F(x): x <  5 --> F(x + 1);
+    #F(x): x >= 5 --> F(x - 5);
+    F(x): --> F(x) P(a) F(x) M(a * 2) F(x) P(a) F(x);
 
 END_PRODUCTIONS;
 

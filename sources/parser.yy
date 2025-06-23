@@ -130,10 +130,10 @@ production_list: production { $$ = new ast::node_list( { $1 } );}
 
 production: predecessor COLON condition_opt IMPLIES successor SEMICOLON { $$ = new ast::production($1, $5, $3); };
 
-predecessor:                   symbol_list                   { $$ = new ast::predecessor($1); }
-           |                   symbol_list OP_GT symbol_list { $$ = new ast::predecessor($1, nullptr, $3); }
-           | symbol_list OP_LT symbol_list                   { $$ = new ast::predecessor($3, $1); }
-           | symbol_list OP_LT symbol_list OP_GT symbol_list { $$ = new ast::predecessor($3, $1, $5); }
+predecessor:                   symbol                   { $$ = new ast::predecessor($1); }
+           |                   symbol OP_GT symbol_list { $$ = new ast::predecessor($1, nullptr, $3); }
+           | symbol_list OP_LT symbol                   { $$ = new ast::predecessor($3, $1); }
+           | symbol_list OP_LT symbol OP_GT symbol_list { $$ = new ast::predecessor($3, $1, $5); }
 ;
 
 /* node: can only do a == b for now, maybe expand for more complex conditions */
@@ -166,7 +166,7 @@ expression: expression OP_PLUS     expression { $$ = new ast::expression($1, $3,
           ;
 
 primary: INTEGER    { $$ = new ast::numerical<int>(yylval.ival);   }
-       | FLOAT      { $$ = new ast::numerical<float>(yylval.fval); }
+       | FLOAT      { $$ = new ast::numerical<double>(yylval.fval); }
        | IDENTIFIER { $$ = new ast::identifier(yylval.sval);       }
 ;
 

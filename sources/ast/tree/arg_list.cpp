@@ -5,6 +5,12 @@ namespace ast {
 arg_list::arg_list(std::vector<node*> nodes)
 	: node_list(nodes) { }
 
+arg_list::arg_list(arg_list&& other)
+	: node_list(std::move(other)) { }
+
+arg_list::arg_list(const arg_list& other)
+	: node_list(other) { }
+
 void arg_list::print(std::ostream& stream) const {
 	stream << *_nodes.front();
 

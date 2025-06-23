@@ -5,6 +5,10 @@ namespace ast {
 comparator::comparator(comparator_type type)
 	: _type(type) { }
 
+comparator* comparator::clone() const {
+	return new ast::comparator(*this);
+}
+
 void comparator::print(std::ostream& stream) const {
 	switch (_type) {
 		case ast::comparator_type::LT: {

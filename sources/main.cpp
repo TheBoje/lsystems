@@ -1,4 +1,6 @@
 #include "ast/utils.h"
+#include "ast/tree/node.h"
+#include "ast/tree/root.h"
 
 #include "utils/macros.h"
 #include "parser.tab.h"
@@ -16,7 +18,7 @@ extern ast::node* Ast;
 
 const char* current_file_path = nullptr;
 
-//#define ENABLE_UI
+#define ENABLE_UI
 #ifdef TEST
 	#undef ENABLE_UI
 #endif
@@ -25,7 +27,7 @@ int main(int argc, char* argv[]) {
 	if (argc >= 2) {
 		current_file_path = argv[1];
 	} else {
-		current_file_path = "examples/random.lsy";
+		current_file_path = "examples/default.lsy";
 	}
 
 	FILE* file = fopen(current_file_path, "r");
@@ -47,12 +49,16 @@ int main(int argc, char* argv[]) {
 		std::cout << "nodes: none" << std::endl;
 	}
 
+	ast::root* root = static_cast<ast::root*>(Ast);
+	auto result = root->derive();
+	std::cout << "result: " << *result << std::endl;
+
 	// std::cout << "config: " << std::endl << *config << std::endl;
 	//std::cout << ast::utils::derive_lsystem(config, vAst) << std::endl;
 
 #ifdef ENABLE_UI
 
-	const auto& [vertices, indices] = ast::utils::vertices_from_lsystem(config, vAst);
+	const auto& [vertices, indices] = root->get_vertices(result);
 
 	renderer::renderer::get()->setVertices(vertices, indices);
 

@@ -8,6 +8,13 @@ namespace ast {
 class productions : public node {
 public:
 	productions(node_list* production_list);
+	productions(productions&& other);
+	productions(const productions& other);
+	virtual ~productions() override;
+	virtual productions& operator=(productions&& rhs);
+	virtual productions& operator=(const productions& rhs);
+	virtual productions* clone() const override;
+
 	void print(std::ostream& stream) const override;
 
 public:
