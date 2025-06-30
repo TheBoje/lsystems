@@ -1,5 +1,8 @@
 #include "ast/tree/productions.h"
 
+#include "ast/tree/production.h"
+#include <cassert>
+
 namespace ast {
 
 productions::productions(node_list* production_lst)
@@ -54,6 +57,26 @@ productions* productions::clone() const {
 
 void productions::print(std::ostream& stream) const {
 	stream << "productions:" << *_production_list;
+}
+
+std::pair<size_t, size_t> productions::get_context_maxes() const {
+	size_t left_max = 0;
+	size_t right_max = 0;
+
+	for (auto node : _production_list->_nodes) {
+		auto production = dynamic_cast<ast::production*>(node);
+		assert(production);
+
+		if (production->_predecessor->_left_context) {
+			left_max = std::max(left_max, production->_predecessor->_left_context->_nodes.size());
+		}
+
+		if (production->_predecessor->_right_context) {
+			right_max = std::max(right_max, production->_predecessor->_right_context->_nodes.size());
+		}
+	}
+
+	return {left_max, right_max};
 }
 
 } // namespace ast

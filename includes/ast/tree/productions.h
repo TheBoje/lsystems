@@ -17,6 +17,8 @@ public:
 
 	void print(std::ostream& stream) const override;
 
+	std::pair<size_t, size_t> get_context_maxes() const;
+
 public:
 	production_list* _production_list = nullptr;
 };

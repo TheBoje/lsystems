@@ -8,6 +8,7 @@
 #include "ast/tree/node_list.h"
 #include "macros.h"
 
+#include <algorithm>
 #include <iostream>
 #include <stack>
 #include <stdexcept>
@@ -106,6 +107,7 @@ node_list* root::derive() {
 	auto def_node = get_definition("d")->_expression;
 	auto num_node = dynamic_cast<ast::numerical<int>*>(def_node);
 	const int derivations = num_node->_value;
+	const auto [max_left_context_size, max_right_context_size] = _productions->get_context_maxes();
 
 	node_list* result = new node_list(_axiom->_symbols->_nodes);
 
@@ -123,18 +125,28 @@ node_list* root::derive() {
 			// Previous context
 			if (symbol_index > 0) {
 				prev_symbols = new ast::node_list();
-				for (auto begin = result->_nodes.begin(); begin != result->_nodes.begin() + symbol_index; begin++) {
-					prev_symbols->_nodes.push_back((*begin)->clone());
+
+				for (size_t i = std::max((size_t)0, symbol_index - max_left_context_size); i < symbol_index; i++) {
+					prev_symbols->push_back(result->_nodes.at(i)->clone());
 				}
+
+				//				for (auto begin = result->_nodes.begin(); begin != result->_nodes.begin() + symbol_index; begin++) {
+				//					prev_symbols->_nodes.push_back((*begin)->clone());
+				//				}
 			} else {
 				prev_symbols = nullptr;
 			}
 			// Next context
 			if (symbol_index + 1 < result->_nodes.size()) {
 				next_symbols = new ast::node_list();
-				for (auto begin = result->_nodes.begin() + symbol_index + 1; begin != result->_nodes.end(); begin++) {
-					next_symbols->_nodes.push_back((*begin)->clone());
+
+				for (size_t i = std::min(result->_nodes.size() - 1, symbol_index + 1 + max_right_context_size); i < result->_nodes.size(); i++) {
+					next_symbols->push_back(result->_nodes.at(i)->clone());
 				}
+
+				//				for (auto begin = result->_nodes.begin() + symbol_index + 1; begin != result->_nodes.end(); begin++) {
+				//					next_symbols->_nodes.push_back((*begin)->clone());
+				//				}
 			} else {
 				next_symbols = nullptr;
 			}
