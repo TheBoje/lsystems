@@ -1,8 +1,10 @@
-DERIVATION: 5;
-ANGLE_FACTOR: 25.7;
-SCALE_FACTOR: 0.1;
-AXIOM:F;
+AXIOM:F(1);
+DEFINITIONS:
+    a --> 25.7;
+    s --> 5.0;
+    d --> 1;
+END_DEFINITIONS;
 
 PRODUCTIONS:
-    * < F > * --> F[+F]F[-F][F];
+    F(x) : --> F(x) SP P(a) F(x) Sp F(x) SP M(a) F(x) Sp SP F(x) Sp;
 END_PRODUCTIONS;

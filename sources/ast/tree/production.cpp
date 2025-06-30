@@ -88,28 +88,15 @@ bool production::matches_symbol(ast::symbol* symbol, ast::node_list* left_contex
 		return false;
 	}
 
-	if (satisfy_conditions(symbol, definitions) == false) {
+	if (satisfy_conditions(symbol, left_context, right_context, definitions) == false) {
 		return false;
 	}
 
 	return true;
 }
 
-void production::add_evaluated_successor(ast::symbol* source_symbol, ast::node_list* result, ast::definitions* definitions) const {
-	std::vector<ast::definition*> local_definitions {};
-
-	if (source_symbol->_args) {
-		assert(_predecessor->_symbol->_args);
-		assert(_predecessor->_symbol->_args->_nodes.size() == source_symbol->_args->_nodes.size());
-
-		for (size_t i = 0; i < source_symbol->_args->_nodes.size(); i++) {
-			auto predecessor_identifier = _predecessor->_symbol->_args->_nodes[i];
-			auto source_value = source_symbol->_args->_nodes[i];
-
-			auto local_definition = new ast::definition(predecessor_identifier->clone(), source_value->clone());
-			local_definitions.push_back(local_definition);
-		}
-	}
+void production::add_evaluated_successor(ast::symbol* source_symbol, ast::node_list* left_context, ast::node_list* right_context, ast::node_list* result, ast::definitions* definitions) const {
+	std::vector<ast::definition*> local_definitions = _predecessor->get_local_definitions(source_symbol, left_context, right_context);
 
 	for (auto node : _successor->_symbols->_nodes) {
 		auto clone = static_cast<ast::symbol*>(node)->clone();
@@ -139,27 +126,20 @@ production* production::clone() const {
 	return new ast::production(*this);
 }
 
-bool production::satisfy_conditions(ast::symbol* symbol, ast::definitions* definitions) const {
+bool production::satisfy_conditions(ast::symbol* symbol, ast::node_list* left_context, ast::node_list* right_context, ast::definitions* definitions) const {
 	if (!_condition) {
 		return true;
 	}
 
-	std::vector<ast::definition*> local_definitions {};
+	std::vector<ast::definition*> local_definitions = _predecessor->get_local_definitions(symbol, left_context, right_context);
 
-	if (symbol->_args) {
-		assert(_predecessor->_symbol->_args);
-		assert(_predecessor->_symbol->_args->_nodes.size() == symbol->_args->_nodes.size());
+	bool result = _condition->evaluate(local_definitions, definitions);
 
-		for (size_t i = 0; i < symbol->_args->_nodes.size(); i++) {
-			auto predecessor_identifier = _predecessor->_symbol->_args->_nodes[i];
-			auto source_value = symbol->_args->_nodes[i];
-
-			auto local_definition = new ast::definition(predecessor_identifier->clone(), source_value->clone());
-			local_definitions.push_back(local_definition);
-		}
+	for (auto local_definition : local_definitions) {
+		delete local_definition;
 	}
 
-	return _condition->evaluate(local_definitions, definitions);
+	return result;
 }
 
 } // namespace ast

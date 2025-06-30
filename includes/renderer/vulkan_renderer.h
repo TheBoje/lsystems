@@ -158,6 +158,7 @@ private:
 private:
 	GLFWwindow* _window = nullptr;
 	bool _bKeepAlive = true;
+	bool _bRotateCamera = true;
 	uint32_t _currentFrame = 0;
 
 	VkInstance _instance;

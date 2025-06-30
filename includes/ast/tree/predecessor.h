@@ -19,6 +19,7 @@ public:
 	void print(std::ostream& stream) const override;
 
 	bool matches_symbol(ast::symbol* symbol, ast::node_list* left_context, ast::node_list* right_context) const;
+	std::vector<ast::definition*> get_local_definitions(ast::symbol* symbol, ast::node_list* left_context, ast::node_list* right_context) const;
 
 private:
 	bool matches_context_left(ast::node_list* context) const;

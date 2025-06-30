@@ -1,4 +1,7 @@
 #include "ast/tree/predecessor.h"
+#include "ast/tree/definition.h"
+#include "symbol.h"
+#include <cassert>
 
 namespace ast {
 
@@ -136,12 +139,132 @@ bool predecessor::matches_symbol(ast::symbol* symbol, ast::node_list* left_conte
 	return true;
 }
 
+std::vector<ast::definition*> predecessor::get_local_definitions(ast::symbol* symbol, ast::node_list* left_context, ast::node_list* right_context) const {
+	std::vector<ast::definition*> result {};
+
+	auto add_args_to_definition = [&result](ast::symbol* source_symbol, ast::symbol* predecessor_symbol) -> void {
+		if (source_symbol->_args) {
+			assert(predecessor_symbol->_args);
+			assert(predecessor_symbol->_args->_nodes.size() == source_symbol->_args->_nodes.size());
+
+			for (size_t i = 0; i < source_symbol->_args->_nodes.size(); i++) {
+				auto predecessor_identifier = predecessor_symbol->_args->_nodes[i];
+				auto source_value = source_symbol->_args->_nodes[i];
+
+				auto local_definition = new ast::definition(predecessor_identifier->clone(), source_value->clone());
+				result.push_back(local_definition);
+			}
+		}
+	};
+
+	add_args_to_definition(symbol, _symbol);
+
+	if (_left_context && _left_context->_nodes.size() > 0) {
+		assert(left_context);
+
+		size_t size = std::min(_left_context->_nodes.size(), left_context->_nodes.size());
+		for (size_t i = size - 1; i > 0; i--) {
+			auto input_left_symbol = dynamic_cast<ast::symbol*>(left_context->_nodes[i]);
+			assert(input_left_symbol);
+			auto predecessor_left_symbol = dynamic_cast<ast::symbol*>(_left_context->_nodes[i]);
+			assert(predecessor_left_symbol);
+
+			add_args_to_definition(input_left_symbol, predecessor_left_symbol);
+		}
+	}
+
+	if (_right_context && _right_context->_nodes.size() > 0) {
+		assert(right_context);
+
+		size_t size = std::min(_right_context->_nodes.size(), right_context->_nodes.size());
+		for (size_t i = 0; i < size; i++) {
+			auto input_right_symbol = dynamic_cast<ast::symbol*>(right_context->_nodes[i]);
+			assert(input_right_symbol);
+			auto predecessor_right_symbol = dynamic_cast<ast::symbol*>(_right_context->_nodes[i]);
+			assert(predecessor_right_symbol);
+
+			add_args_to_definition(input_right_symbol, predecessor_right_symbol);
+		}
+	}
+
+	return result;
+}
+
 bool predecessor::matches_context_left(ast::node_list* context) const {
-	// TODO:
+	if (!_left_context || _left_context->_nodes.empty()) {
+		return true;
+	}
+	assert(context);
+
+	if (context->_nodes.size() < _left_context->_nodes.size()) {
+		return false;
+	}
+
+	const size_t size_reference_context = _left_context->_nodes.size();
+	const size_t size_arg_context = context->_nodes.size();
+	for (size_t i = 0; i < size_reference_context; i++) {
+		auto input_left_symbol = dynamic_cast<ast::symbol*>(context->_nodes[size_arg_context - 1 - i]);
+		assert(input_left_symbol);
+		auto predecessor_left_symbol = dynamic_cast<ast::symbol*>(_left_context->_nodes[size_reference_context - 1 - i]);
+		assert(predecessor_left_symbol);
+
+		if (input_left_symbol->_identifier->_value != predecessor_left_symbol->_identifier->_value) {
+			return false;
+		}
+
+		if (!input_left_symbol->_args && predecessor_left_symbol->_args) {
+			return false;
+		}
+
+		if (input_left_symbol->_args && !predecessor_left_symbol->_args) {
+			return false;
+		}
+
+		if (input_left_symbol->_args) {
+			if (input_left_symbol->_args->_nodes.size() != predecessor_left_symbol->_args->_nodes.size()) {
+				return false;
+			}
+		}
+	}
+
 	return true;
 }
+
 bool predecessor::matches_context_right(ast::node_list* context) const {
-	// TODO:
+	if (!_right_context || _right_context->_nodes.empty()) {
+		return true;
+	}
+	assert(context);
+
+	if (context->_nodes.size() < _right_context->_nodes.size()) {
+		return false;
+	}
+
+	for (size_t i = 0; i <= _right_context->_nodes.size(); i++) {
+		auto input_right_symbol = dynamic_cast<ast::symbol*>(context->_nodes[i]);
+		assert(input_right_symbol);
+		auto predecessor_right_symbol = dynamic_cast<ast::symbol*>(_right_context->_nodes[i]);
+		assert(predecessor_right_symbol);
+
+		if (input_right_symbol->_identifier->_value != predecessor_right_symbol->_identifier->_value) {
+			return false;
+		}
+
+		if (!input_right_symbol->_args && predecessor_right_symbol->_args) {
+			return false;
+		}
+
+		if (input_right_symbol->_args && !predecessor_right_symbol->_args) {
+			return false;
+		}
+
+		if (input_right_symbol->_args) {
+			if (input_right_symbol->_args->_nodes.size() != predecessor_right_symbol->_args->_nodes.size()) {
+				return false;
+			}
+		}
+	}
+
 	return true;
 }
 

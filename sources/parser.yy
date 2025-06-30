@@ -124,7 +124,7 @@ definition: IDENTIFIER IMPLIES expression SEMICOLON { $$ = new ast::definition(n
 
 production_section: PRODUCTIONS COLON production_list END_PRODUCTIONS SEMICOLON { $$ = new ast::productions($3); };
 
-production_list: production { $$ = new ast::node_list( { $1 } );}
+production_list: production { $$ = new ast::production_list( { $1 } );}
                | production_list production { $1->push_back($2); $$ = $1; }
 ;
 

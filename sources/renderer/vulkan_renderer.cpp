@@ -145,6 +145,12 @@ void renderer::run() {
 
 	while (!glfwWindowShouldClose(_window) && _bKeepAlive) {
 		glfwPollEvents();
+		if (glfwGetKey(_window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+			_bKeepAlive = false;
+		}
+		if (glfwGetKey(_window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+			_bRotateCamera = !_bRotateCamera;
+		}
 
 		render();
 	}
@@ -1466,13 +1472,19 @@ bool renderer::recreateSwapChain() {
 }
 
 bool renderer::updateUniformBuffer(uint32_t frame) {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
 	UniformBufferObject ubo {};
-	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	if (_bRotateCamera) {
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	} else {
+		ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(-40.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	}
+
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(radians(45.0f), _swapChainExtent.width / (float)_swapChainExtent.height, 0.1f, 10.0f);
 	ubo.proj[1][1] *= -1;

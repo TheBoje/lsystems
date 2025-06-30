@@ -2,8 +2,8 @@
 
 namespace ast {
 
-productions::productions(node_list* production_list)
-	: _production_list(production_list) { }
+productions::productions(node_list* production_lst)
+	: _production_list(static_cast<ast::production_list*>(production_lst)) { }
 
 productions::productions(productions&& other)
 	: node(std::move(other))
@@ -14,7 +14,7 @@ productions::productions(productions&& other)
 productions::productions(const productions& other)
 	: node(other) {
 	if (other._production_list) {
-		_production_list = new node_list(*other._production_list); // deep copy
+		_production_list = new production_list(*other._production_list); // deep copy
 	}
 }
 
@@ -29,7 +29,7 @@ productions& productions::operator=(productions&& other) {
 		delete _production_list;
 		_production_list = nullptr;
 		if (other._production_list) {
-			_production_list = new ast::node_list(*other._production_list);
+			_production_list = new ast::production_list(*other._production_list);
 			other._production_list = nullptr;
 		}
 	}
@@ -42,7 +42,7 @@ productions& productions::operator=(const productions& other) {
 		delete _production_list;
 		_production_list = nullptr;
 		if (other._production_list) {
-			_production_list = new ast::node_list(*other._production_list);
+			_production_list = new ast::production_list(*other._production_list);
 		}
 	}
 	return *this;

@@ -22,10 +22,10 @@ public:
 	void print(std::ostream& stream) const override;
 
 	bool matches_symbol(ast::symbol* symbol, ast::node_list* left_context, ast::node_list* right_context, ast::definitions* definitions) const;
-	void add_evaluated_successor(ast::symbol* source_symbol, ast::node_list* result, ast::definitions* definitions) const;
+	void add_evaluated_successor(ast::symbol* source_symbol, ast::node_list* left_context, ast::node_list* right_context, ast::node_list* result, ast::definitions* definitions) const;
 
 private:
-	bool satisfy_conditions(ast::symbol* symbol, ast::definitions* definitions) const;
+	bool satisfy_conditions(ast::symbol* symbol, ast::node_list* left_context, ast::node_list* right_context, ast::definitions* definitions) const;
 
 public:
 	predecessor* _predecessor = nullptr;

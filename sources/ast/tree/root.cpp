@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <stack>
+#include <stdexcept>
 #include <utility>
 #include <string_view>
 
@@ -149,7 +150,7 @@ node_list* root::derive() {
 
 				production_found = true;
 				// add successor to new_result
-				current_production->add_evaluated_successor(curr_symbol, new_result, _definitions);
+				current_production->add_evaluated_successor(curr_symbol, prev_symbols, next_symbols, new_result, _definitions);
 
 				break;
 			}
@@ -175,18 +176,6 @@ node_list* root::derive() {
 	}
 
 	return result;
-}
-
-constexpr uint64_t hash(std::string_view str) {
-	uint64_t hash = 0;
-	for (char c : str) {
-		hash = (hash * 131) + c;
-	}
-	return hash;
-}
-
-constexpr uint64_t operator""_hash(const char* str, size_t len) {
-	return hash(std::string_view(str, len));
 }
 
 std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> root::get_vertices(ast::node_list* nodes) {
@@ -217,61 +206,54 @@ std::pair<std::vector<renderer::vertex>, std::vector<uint32_t>> root::get_vertic
 		ast::symbol* current_symbol = dynamic_cast<ast::symbol*>(current_node);
 		assert(current_symbol);
 
-		switch (hash(current_symbol->_identifier->_value)) {
-			case "F"_hash: {
-				auto distance_expression = dynamic_cast<ast::abstract_expression*>(current_symbol->_args->_nodes[0]);
-				assert(distance_expression);
-				double distance = 0;
-				auto result_expression = distance_expression->evaluate({}, nullptr);
-				if (dynamic_cast<ast::numerical<double>*>(result_expression)) {
-					distance = dynamic_cast<ast::numerical<double>*>(result_expression)->_value;
-				} else {
-					distance = dynamic_cast<ast::numerical<int>*>(result_expression)->_value;
-				}
+		const std::string& identifier_name = current_symbol->_identifier->_value;
 
-				glm::vec3 next = state.pos + state.dir_forward * (float)distance * (float)scale;
+		if (identifier_name == "F") {
+			auto distance_expression = dynamic_cast<ast::abstract_expression*>(current_symbol->_args->_nodes[0]);
+			assert(distance_expression);
+			double distance = 0;
 
-				vertices.push_back({next, color});
-				uint32_t newIndex = vertices.size() - 1;
-
-				indices.push_back(state.index);
-				indices.push_back(newIndex);
-
-				state.index = newIndex;
-				state.pos = next;
-				break;
+			auto result_expression = distance_expression->evaluate({}, nullptr);
+			if (dynamic_cast<ast::numerical<double>*>(result_expression)) {
+				distance = dynamic_cast<ast::numerical<double>*>(result_expression)->_value;
+			} else {
+				distance = dynamic_cast<ast::numerical<int>*>(result_expression)->_value;
 			}
-			case "P"_hash: {
-				auto angle_expression = dynamic_cast<ast::abstract_expression*>(current_symbol->_args->_nodes[0]);
-				assert(angle_expression);
-				double angle = glm::radians(dynamic_cast<ast::numerical<double>*>(angle_expression->evaluate({}, nullptr))->_value);
 
-				state.dir_forward = glm::rotate(state.dir_forward, (float)angle, state.dir_up);
-				state.dir_left = glm::rotate(state.dir_left, (float)angle, state.dir_up);
-				break;
-			}
-			case "M"_hash: {
-				auto angle_expression = dynamic_cast<ast::abstract_expression*>(current_symbol->_args->_nodes[0]);
-				assert(angle_expression);
-				double angle = glm::radians(dynamic_cast<ast::numerical<double>*>(angle_expression->evaluate({}, nullptr))->_value);
+			glm::vec3 next = state.pos + state.dir_forward * (float)distance * (float)scale;
 
-				state.dir_forward = glm::rotate(state.dir_forward, -(float)angle, state.dir_up);
-				state.dir_left = glm::rotate(state.dir_left, -(float)angle, state.dir_up);
-				break;
-			}
-			case "SP"_hash: {
-				stack.push(state);
-				break;
-			}
-			case "Sp"_hash: {
-				state = stack.top();
-				stack.pop();
+			vertices.push_back({next, color});
+			uint32_t newIndex = vertices.size() - 1;
 
-				vertices.push_back({state.pos, color});
-				state.index = vertices.size() - 1;
+			indices.push_back(state.index);
+			indices.push_back(newIndex);
 
-				break;
-			}
+			state.index = newIndex;
+			state.pos = next;
+		} else if (identifier_name == "P") {
+			auto angle_expression = dynamic_cast<ast::abstract_expression*>(current_symbol->_args->_nodes[0]);
+			assert(angle_expression);
+			double angle = glm::radians(dynamic_cast<ast::numerical<double>*>(angle_expression->evaluate({}, nullptr))->_value);
+
+			state.dir_forward = glm::rotate(state.dir_forward, (float)angle, state.dir_up);
+			state.dir_left = glm::rotate(state.dir_left, (float)angle, state.dir_up);
+		} else if (identifier_name == "M") {
+			auto angle_expression = dynamic_cast<ast::abstract_expression*>(current_symbol->_args->_nodes[0]);
+			assert(angle_expression);
+			double angle = glm::radians(dynamic_cast<ast::numerical<double>*>(angle_expression->evaluate({}, nullptr))->_value);
+
+			state.dir_forward = glm::rotate(state.dir_forward, -(float)angle, state.dir_up);
+			state.dir_left = glm::rotate(state.dir_left, -(float)angle, state.dir_up);
+		} else if (identifier_name == "SP") {
+			stack.push(state);
+		} else if (identifier_name == "Sp") {
+			state = stack.top();
+			stack.pop();
+
+			vertices.push_back({state.pos, color});
+			state.index = vertices.size() - 1;
+		} else {
+			// nothing
 		}
 	}
 
