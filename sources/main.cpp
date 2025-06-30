@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 
 	ast::root* root = static_cast<ast::root*>(Ast);
 	auto result = root->derive();
-	std::cout << "result: " << *result << std::endl;
+	//	std::cout << "result: " << *result << std::endl;
 
 	// std::cout << "config: " << std::endl << *config << std::endl;
 	//std::cout << ast::utils::derive_lsystem(config, vAst) << std::endl;

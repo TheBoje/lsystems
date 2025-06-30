@@ -9,6 +9,8 @@
 #include "macros.h"
 
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include <iostream>
 #include <stack>
 #include <stdexcept>
@@ -104,6 +106,12 @@ node_list* root::derive() {
 		return nullptr;
 	}
 
+#if defined(DEBUG)
+
+	double start = 1000 * ((double)clock()) / (double)(CLOCKS_PER_SEC);
+
+#endif
+
 	auto def_node = get_definition("d")->_expression;
 	auto num_node = dynamic_cast<ast::numerical<int>*>(def_node);
 	const int derivations = num_node->_value;
@@ -113,6 +121,10 @@ node_list* root::derive() {
 
 	// For each derivation
 	for (int step = 0; step < derivations; ++step) {
+#if defined(DEBUG)
+		double start_it = 1000 * ((double)clock()) / (double)(CLOCKS_PER_SEC);
+#endif
+
 		node_list* new_result = new node_list();
 
 		ast::node_list* prev_symbols = nullptr;
@@ -129,10 +141,6 @@ node_list* root::derive() {
 				for (size_t i = std::max((size_t)0, symbol_index - max_left_context_size); i < symbol_index; i++) {
 					prev_symbols->push_back(result->_nodes.at(i)->clone());
 				}
-
-				//				for (auto begin = result->_nodes.begin(); begin != result->_nodes.begin() + symbol_index; begin++) {
-				//					prev_symbols->_nodes.push_back((*begin)->clone());
-				//				}
 			} else {
 				prev_symbols = nullptr;
 			}
@@ -143,10 +151,6 @@ node_list* root::derive() {
 				for (size_t i = std::min(result->_nodes.size() - 1, symbol_index + 1 + max_right_context_size); i < result->_nodes.size(); i++) {
 					next_symbols->push_back(result->_nodes.at(i)->clone());
 				}
-
-				//				for (auto begin = result->_nodes.begin() + symbol_index + 1; begin != result->_nodes.end(); begin++) {
-				//					next_symbols->_nodes.push_back((*begin)->clone());
-				//				}
 			} else {
 				next_symbols = nullptr;
 			}
@@ -184,8 +188,20 @@ node_list* root::derive() {
 		result = new node_list(*new_result);
 		delete new_result;
 
+#if defined(DEBUG)
+		double end_it = 1000 * ((double)clock()) / (double)(CLOCKS_PER_SEC);
+
+		std::cout << "derivation " << step + 1 << "/" << derivations << ": " << (end_it - start_it) << "ms" << std::endl;
+#else
 		std::cout << "derivation " << step + 1 << "/" << derivations << ": " << *result << std::endl;
+#endif
 	}
+
+#if defined(DEBUG)
+	double end = 1000 * ((double)clock()) / (double)(CLOCKS_PER_SEC);
+
+	std::cout << "total time: " << (end - start) << "ms" << std::endl;
+#endif
 
 	return result;
 }

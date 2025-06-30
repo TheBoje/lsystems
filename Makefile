@@ -17,7 +17,7 @@ OUT_DIR_SHADERS=${OUT_DIR}/shaders
 # Compilation setup
 C=clang
 CXX=clang++
-CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -I/usr/include/GLFW -I/usr/include/freetype2 -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} ${INC_DIRS} -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
+CXXFLAGS=-std=c++20 -Wpedantic -Wall -Wextra -flto -I/usr/include/GLFW -I/usr/include/freetype2 -I${INC_DIR} -I${OUT_DIR} -I${SRC_DIR} ${INC_DIRS} -DGLFW_USE_WAYLAND=0 -DVK_PROTOTYPES
 CXXLINKING=-lfl -lm -lglfw -lvulkan -lGLEW -ldl -lpthread -lfreetype
 BISONFLAGS=-t -d --defines=${OUT_DIR}/parser.tab.h -Wconflicts-rr -Wcounterexamples
 

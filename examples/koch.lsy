@@ -1,15 +1,11 @@
 # Koch snowflake
-DERIVATION: 2;
-ANGLE_FACTOR: 60.0;
-SCALE_FACTOR: 0.2;
+AXIOM:F(1) M(60.0) M(60.0) F(1) M(60.0) M(60.0) F(1);
+DEFINITIONS:
+    a --> 60.0;
+    s --> 0.1;
+    d --> 6;
+END_DEFINITIONS;
 
-# Starting point
-AXIOM:F;
-
-# Ignore some productions while context matching
-IGNORE:B;
-
-# Production with a context
 PRODUCTIONS:
-    * < F > * --> F+F--F+F;
+    F(x) : --> F(x) P(a) F(x) M(a) M(a) F(x) P(a) F(x);
 END_PRODUCTIONS;
